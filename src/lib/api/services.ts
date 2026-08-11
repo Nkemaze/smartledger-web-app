@@ -61,8 +61,12 @@ export const reportService = {
   balanceSheet: () => api.get<BalanceSheetData>('/reports/balance-sheet'),
 }
 
+export type ChatMessage = { role: 'user' | 'assistant'; content: string }
+
 export const advisorService = {
   insights: () => api.get<{ insights: AdvisorInsight[] }>('/advisor/insights'),
+  chat: (message: string, history: ChatMessage[] = []) =>
+    api.post<{ reply: string; source: 'ai' | 'offline' }>('/advisor/chat', { message, history }),
 }
 
 export const notificationService = {

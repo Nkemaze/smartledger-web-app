@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Icon } from '@/components/ui/Icon'
-import { advisorService } from '@/lib/api'
+import { advisorService, type ChatMessage } from '@/lib/api'
 import { useAuth } from '@/lib/auth/AuthContext'
 import type { AdvisorInsight } from '@/lib/api'
 
@@ -19,6 +19,8 @@ const severityMeta: Record<AdvisorInsight['severity'], { badge: string; badgeTon
   warning: { badge: 'Needs Attention', badgeTone: 'warning', actionClass: 'bg-warning text-on-primary hover:bg-warning-container shadow-lg shadow-warning/25' },
   info: { badge: 'Insight', badgeTone: 'info', actionClass: 'bg-primary text-on-primary hover:bg-primary-container shadow-lg shadow-primary/25' },
 }
+
+type ChatEntry = ChatMessage & { source?: 'ai' | 'offline' }
 
 function InsightCard({
   icon,
@@ -59,10 +61,24 @@ function InsightCard({
 }
 
 export function AiAdvisor() {
-  const { user } = useAuth()
+  const { user, business } = useAuth()
   const [insights, setInsights] = useState<AdvisorInsight[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [lastSync, setLastSync] = useState<Date | null>(null)
+
+  const [messages, setMessages] = useState<ChatEntry[]>([
+    {
+      role: 'assistant',
+      content: "Hi! I'm your SmartLedger advisor. Ask me anything about your sales, inventory, or taxes.",
+    },
+  ])
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const [chatError, setChatError] = useState('')
+  const historyRef = useRef<ChatMessage[]>([])
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+
   const firstName = (user?.name ?? 'there').split(' ')[0]
 
   const load = async () => {
@@ -71,6 +87,7 @@ export function AiAdvisor() {
     try {
       const data = await advisorService.insights()
       setInsights(data.insights ?? [])
+      setLastSync(new Date())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load insights.')
     } finally {
@@ -81,6 +98,45 @@ export function AiAdvisor() {
   useEffect(() => {
     void load()
   }, [])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, sending])
+
+  const confidence = useMemo(() => {
+    let score = 45
+    if (business?.name) score += 10
+    if (business?.shopType) score += 5
+    if (business?.currency) score += 5
+    if (business?.taxId) score += 10
+    if (business?.address) score += 5
+    if (business?.phone) score += 5
+    if (!loading) score += 10
+    if (insights.length > 0) score += 5
+    return Math.min(Math.max(score, 0), 99)
+  }, [business, insights, loading])
+
+  const syncLabel = lastSync
+    ? lastSync.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
+    : '—'
+
+  const send = async () => {
+    const text = input.trim()
+    if (!text || sending) return
+    setInput('')
+    setChatError('')
+    setMessages((prev) => [...prev, { role: 'user', content: text }])
+    setSending(true)
+    try {
+      const data = await advisorService.chat(text, historyRef.current.slice(-20))
+      historyRef.current = [...historyRef.current, { role: 'user', content: text }, { role: 'assistant', content: data.reply }]
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply, source: data.source }])
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : 'Unable to reach the advisor.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <div className="space-y-xl">
@@ -101,13 +157,17 @@ export function AiAdvisor() {
         </div>
         <div className="flex items-center gap-md">
           <div className="bg-surface-container-lowest rounded-xl px-lg py-3 shadow-sm text-center">
-            <p className="font-headline text-title-lg text-primary">98.4%</p>
+            <p className="font-headline text-title-lg text-primary">{confidence.toFixed(1)}%</p>
             <p className="text-[11px] text-on-surface-variant uppercase tracking-wider">Data Confidence</p>
           </div>
           <div className="bg-surface-container-lowest rounded-xl px-lg py-3 shadow-sm text-center">
             <p className="font-headline text-title-lg text-on-surface flex items-center gap-1">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              now
+              {lastSync ? (
+                <span className="w-2 h-2 bg-primary rounded-full" />
+              ) : (
+                <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              )}
+              {syncLabel}
             </p>
             <p className="text-[11px] text-on-surface-variant uppercase tracking-wider">Last Sync</p>
           </div>
@@ -176,22 +236,86 @@ export function AiAdvisor() {
       )}
 
       <Card className="p-xl">
-        <div className="flex items-center gap-lg">
+        <div className="flex items-center gap-lg mb-lg">
           <span className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
             <Icon name="auto_awesome" className="text-on-primary" />
           </span>
-          <div className="flex-1 flex items-center gap-md bg-surface-container-low rounded-full px-lg py-3">
-            <input
-              className="flex-1 bg-transparent outline-none font-body text-body-md text-on-surface placeholder:text-outline/60"
-              placeholder="Ask about your business, inventory, or tax..."
-            />
-            <Icon name="send" className="text-primary cursor-pointer hover:scale-110 transition-transform" />
+          <div>
+            <p className="font-label text-label-md font-bold text-on-surface">Ask your advisor</p>
+            <p className="font-body text-body-sm text-on-surface-variant">
+              Natural-language answers from your live data
+            </p>
           </div>
-          <button className="hidden md:flex items-center gap-2 h-11 px-lg bg-primary text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 hover:bg-primary-container transition-colors">
-            <Icon name="lightbulb" />
-            Quick Insights
-          </button>
+          <div className="ml-auto hidden sm:block">
+            {messages.some((m) => m.source === 'ai') ? (
+              <Badge tone="success">Powered by AI</Badge>
+            ) : (
+              <Badge tone="info">Offline assistant</Badge>
+            )}
+          </div>
         </div>
+
+        <div className="max-h-[320px] overflow-y-auto space-y-md mb-lg pr-1">
+          {messages.map((msg, index) => (
+            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[80%] rounded-2xl px-lg py-md font-body text-body-md whitespace-pre-wrap ${
+                  msg.role === 'user'
+                    ? 'bg-primary text-on-primary rounded-br-sm'
+                    : 'bg-surface-container-low rounded-bl-sm text-on-surface'
+                }`}
+              >
+                {msg.source && (
+                  <p className="text-[10px] font-label font-bold uppercase tracking-wider mb-1 opacity-60">
+                    {msg.source === 'ai' ? 'AI Advisor' : 'Offline Summary'}
+                  </p>
+                )}
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          {sending && (
+            <div className="flex justify-start">
+              <div className="bg-surface-container-low rounded-2xl rounded-bl-sm px-lg py-md flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-bounce [animation-delay:100ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-bounce [animation-delay:200ms]" />
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {chatError && (
+          <p className="flex items-center gap-2 font-body text-body-sm text-error mb-md">
+            <Icon name="error_outline" className="text-[18px]" />
+            {chatError}
+          </p>
+        )}
+
+        <form
+          className="flex items-center gap-md bg-surface-container-low rounded-full px-lg py-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void send()
+          }}
+        >
+          <input
+            className="flex-1 bg-transparent outline-none font-body text-body-md text-on-surface placeholder:text-outline/60"
+            placeholder="Ask about your business, inventory, or tax..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={sending}
+          />
+          <button
+            type="submit"
+            aria-label="Send message"
+            disabled={sending || !input.trim()}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary transition-transform hover:scale-105 disabled:opacity-40 disabled:hover:scale-100"
+          >
+            <Icon name="send" className="text-[18px]" />
+          </button>
+        </form>
       </Card>
     </div>
   )

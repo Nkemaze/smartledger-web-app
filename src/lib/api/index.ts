@@ -11,5 +11,6 @@ export {
   staffService,
   customerService,
   supplierService,
+  type ChatMessage,
 } from './services'
 export type * from './types'
