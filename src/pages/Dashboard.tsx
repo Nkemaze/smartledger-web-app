@@ -7,7 +7,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { DonutChart } from '@/components/ui/DonutChart'
 import { Icon } from '@/components/ui/Icon'
 import { useAuth } from '@/lib/auth/AuthContext'
-import { reportService, advisorService } from '@/lib/api'
+import { reportService, advisorService, inventoryService } from '@/lib/api'
 import type { DashboardData, AdvisorInsight, ApiTransaction } from '@/lib/api'
 
 const n = (v: number | string | null | undefined) => Number(v ?? 0)
@@ -35,6 +35,7 @@ export function Dashboard() {
   const { user } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [insight, setInsight] = useState<AdvisorInsight | null>(null)
+  const [productCount, setProductCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -42,9 +43,14 @@ export function Dashboard() {
     setLoading(true)
     setError('')
     try {
-      const [d, adv] = await Promise.all([reportService.dashboard(), advisorService.insights()])
+      const [d, adv, products] = await Promise.all([
+        reportService.dashboard(),
+        advisorService.insights(),
+        inventoryService.list(),
+      ])
       setData(d)
       setInsight(adv.insights[0] ?? null)
+      setProductCount(products.length)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load dashboard data.')
     } finally {
@@ -95,6 +101,8 @@ export function Dashboard() {
 
   const lowStock = data?.lowStockProducts[0] ?? null
 
+  const txCount = n(data?.totals.transactionCount)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -102,6 +110,15 @@ export function Dashboard() {
       </div>
     )
   }
+
+  const isNewUser = productCount === 0 || txCount === 0
+
+  const setupSteps = [
+    { label: 'Create your account', done: true, href: '' },
+    { label: 'Set up your business', done: true, href: '' },
+    { label: 'Add your first product', done: productCount > 0, href: '/setup-products' },
+    { label: 'Record your first sale', done: txCount > 0, href: '/sales' },
+  ]
 
   return (
     <div className="space-y-xl">
@@ -130,6 +147,92 @@ export function Dashboard() {
           Record New Sale
         </Link>
       </div>
+
+      {isNewUser && (
+        <div className="bg-gradient-to-br from-primary/90 to-primary-container rounded-3xl shadow-xl shadow-primary/10 text-on-primary overflow-hidden relative">
+          <div className="absolute top-[-40%] right-[-5%] w-[380px] h-[380px] rounded-full bg-on-primary/10 blur-[80px]" />
+          <div className="absolute bottom-[-40%] left-[-5%] w-[300px] h-[300px] rounded-full bg-secondary/20 blur-[80px]" />
+          <div className="relative z-10 p-xl lg:p-2xl grid lg:grid-cols-[1fr_auto] gap-xl items-center">
+            <div className="space-y-lg">
+              <div className="flex items-center gap-md">
+                <div className="w-12 h-12 rounded-2xl bg-on-primary/15 flex items-center justify-center">
+                  <Icon name="rocket_launch" className="text-[26px]" />
+                </div>
+                <div>
+                  <h2 className="font-headline text-headline-md">
+                    {productCount === 0 ? 'Welcome! Let&apos;s set up your store' : 'Almost there!'}
+                  </h2>
+                  <p className="font-label text-label-md text-on-primary/90">
+                    {productCount === 0
+                      ? 'You have no products yet, so you can\u2019t record a sale or transaction right now.'
+                      : `You've added ${productCount} ${productCount === 1 ? 'product' : 'products'} — time to make your first sale.`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-md">
+                {productCount === 0 ? (
+                  <>
+                    <Link
+                      to="/setup-products"
+                      className="flex items-center gap-2 h-12 px-lg bg-on-primary text-primary rounded-xl font-label text-label-md font-bold shadow-lg active:scale-[0.98] transition-all"
+                    >
+                      <Icon name="add_circle" />
+                      Add your first product
+                    </Link>
+                    <Link
+                      to="/inventory"
+                      className="flex items-center gap-2 h-12 px-lg bg-on-primary/15 hover:bg-on-primary/25 text-on-primary rounded-xl font-label text-label-md font-bold transition-all"
+                    >
+                      <Icon name="inventory_2" />
+                      Go to Inventory
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    to="/sales"
+                    className="flex items-center gap-2 h-12 px-lg bg-on-primary text-primary rounded-xl font-label text-label-md font-bold shadow-lg active:scale-[0.98] transition-all"
+                  >
+                    <Icon name="point_of_sale" />
+                    Record your first sale
+                  </Link>
+                )}
+              </div>
+            </div>
+            <div className="w-full lg:w-[360px] bg-on-primary/10 rounded-2xl p-lg backdrop-blur-sm">
+              <p className="font-label text-label-sm uppercase tracking-widest text-on-primary/80 mb-md">Getting started</p>
+              <div className="space-y-md">
+                {setupSteps.map((s, i) => {
+                  const current = !s.done && (i === 0 || setupSteps[i - 1].done)
+                  return (
+                    <div key={s.label} className="flex items-center gap-md">
+                      <span
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold ${
+                          s.done
+                            ? 'bg-on-primary text-primary'
+                            : current
+                              ? 'bg-on-primary/25 text-on-primary ring-2 ring-on-primary/40'
+                              : 'bg-on-primary/10 text-on-primary/60'
+                        }`}
+                      >
+                        <Icon name={s.done ? 'check' : 'chevron_right'} className="text-[15px]" />
+                      </span>
+                      {s.href && !s.done ? (
+                        <Link to={s.href} className="font-label text-label-md font-bold text-on-primary hover:underline">
+                          {s.label}
+                        </Link>
+                      ) : (
+                        <span className={`font-label text-label-md ${s.done ? 'font-semibold' : 'font-bold text-on-primary'}`}>
+                          {s.label}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center justify-between gap-lg bg-error-container/40 rounded-xl px-lg py-md">

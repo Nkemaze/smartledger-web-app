@@ -6,6 +6,7 @@ import { Login } from '@/pages/Login'
 import { SignUp } from '@/pages/SignUp'
 import { OtpVerification } from '@/pages/OtpVerification'
 import { BusinessSetup } from '@/pages/BusinessSetup'
+import { ProductOnboarding } from '@/pages/ProductOnboarding'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
 const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
@@ -65,6 +66,14 @@ export default function App() {
           element={
             <RequireAuth>
               <BusinessSetup />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/setup-products"
+          element={
+            <RequireAuth>
+              <ProductOnboarding />
             </RequireAuth>
           }
         />

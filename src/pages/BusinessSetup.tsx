@@ -67,7 +67,7 @@ export function BusinessSetup() {
         filingFrequency: form.filingFrequency,
       })
       await refreshBusiness()
-      navigate('/', { replace: true })
+      navigate('/setup-products', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save your settings. Please try again.')
       setSaving(false)

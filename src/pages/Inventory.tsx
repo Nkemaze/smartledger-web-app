@@ -4,6 +4,7 @@ import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
 import { Icon } from '@/components/ui/Icon'
 import { Pagination } from '@/components/ui/Pagination'
+import { ProductFormModal } from '@/components/inventory/ProductFormModal'
 import { inventoryService } from '@/lib/api'
 import type { ApiProduct } from '@/lib/api'
 
@@ -81,6 +82,8 @@ export function Inventory() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -141,12 +144,22 @@ export function Inventory() {
             <Icon name="download" className="text-primary" />
             Export CSV
           </button>
-          <button className="flex items-center gap-2 h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all">
+          <button
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-2 h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all"
+          >
             <Icon name="add_circle" />
             Add New Product
           </button>
         </div>
       </div>
+
+      {saved && (
+        <div className="flex items-center gap-2 bg-primary-container/40 rounded-xl px-lg py-md">
+          <Icon name="check_circle" className="text-primary" />
+          <p className="font-body text-body-md text-on-surface">Product added successfully.</p>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center justify-between gap-lg bg-error-container/40 rounded-xl px-lg py-md">
@@ -255,19 +268,38 @@ export function Inventory() {
                 <tr>
                   <td colSpan={7} className="py-2xl text-center">
                     <Icon name="inventory_2" className="text-[48px] text-outline/30 mx-auto mb-md" />
-                    <p className="font-headline text-title-lg text-on-surface mb-1">No products found</p>
-                    <p className="font-body text-body-md text-on-surface-variant mx-auto max-w-sm">
-                      We couldn't find any products matching your current filters.
-                    </p>
-                    <button
-                      className="mt-lg font-label text-label-md text-primary hover:underline font-bold"
-                      onClick={() => {
-                        setCategory('All Categories')
-                        setStockFilter(null)
-                      }}
-                    >
-                      Clear All Filters
-                    </button>
+                    {items.length === 0 ? (
+                      <>
+                        <p className="font-headline text-title-lg text-on-surface mb-1">Your inventory is empty</p>
+                        <p className="font-body text-body-md text-on-surface-variant mx-auto max-w-sm">
+                          You need at least one product to record a sale or transaction. Add your first product to get
+                          started.
+                        </p>
+                        <button
+                          className="mt-lg inline-flex items-center gap-2 h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all"
+                          onClick={() => setAdding(true)}
+                        >
+                          <Icon name="add_circle" />
+                          Add Your First Product
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-headline text-title-lg text-on-surface mb-1">No products found</p>
+                        <p className="font-body text-body-md text-on-surface-variant mx-auto max-w-sm">
+                          We couldn't find any products matching your current filters.
+                        </p>
+                        <button
+                          className="mt-lg font-label text-label-md text-primary hover:underline font-bold"
+                          onClick={() => {
+                            setCategory('All Categories')
+                            setStockFilter(null)
+                          }}
+                        >
+                          Clear All Filters
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               )}
@@ -288,6 +320,16 @@ export function Inventory() {
           onPage={setPage}
         />
       </Card>
+
+      <ProductFormModal
+        open={adding}
+        onClose={() => setAdding(false)}
+        onSaved={() => {
+          setAdding(false)
+          setSaved(true)
+          void load()
+        }}
+      />
     </div>
   )
 }

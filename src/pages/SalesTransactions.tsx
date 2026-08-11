@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
@@ -465,6 +466,7 @@ function SaleFormModal({
 
 export function SalesTransactions() {
   const { business } = useAuth()
+  const navigate = useNavigate()
   const [period, setPeriod] = useState('Today')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<ApiTransaction | null>(null)
@@ -498,6 +500,8 @@ export function SalesTransactions() {
   useEffect(() => {
     void load()
   }, [])
+
+  const hasProducts = products.length > 0
 
   const filtered = useMemo(() => {
     const start = periodStart(period).getTime()
@@ -551,16 +555,44 @@ export function SalesTransactions() {
           </div>
           <button
             onClick={() => {
+              if (!hasProducts) {
+                navigate('/setup-products')
+                return
+              }
               setSaved(false)
               setRecording(true)
             }}
             className="flex items-center gap-2 h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all"
           >
-            <Icon name="add" />
-            Record New Sale
+            <Icon name={hasProducts ? 'add' : 'inventory_2'} />
+            {hasProducts ? 'Record New Sale' : 'Add Your First Product'}
           </button>
         </div>
       </div>
+
+      {!loading && !hasProducts && (
+        <div className="flex flex-col md:flex-row md:items-center gap-lg justify-between bg-primary/5 border border-primary/15 rounded-2xl px-xl py-lg">
+          <div className="flex items-start gap-md">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Icon name="inventory_2" className="text-primary" />
+            </div>
+            <div>
+              <p className="font-headline text-title-lg text-on-surface">You need a product to record a sale</p>
+              <p className="font-body text-body-md text-on-surface-variant mt-1">
+                Sales are built from your inventory. Add at least one product first and you&apos;ll be able to start
+                recording transactions right away.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/setup-products"
+            className="flex items-center gap-2 h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all whitespace-nowrap"
+          >
+            <Icon name="add_circle" />
+            Add Your First Product
+          </Link>
+        </div>
+      )}
 
       {saved && (
         <div className="flex items-center gap-2 bg-primary-container/40 rounded-xl px-lg py-md">
@@ -648,6 +680,39 @@ export function SalesTransactions() {
           {loading ? (
             <div className="flex items-center justify-center py-2xl">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : !hasProducts ? (
+            <div className="py-2xl text-center">
+              <Icon name="receipt_long" className="text-[48px] text-outline/30 mx-auto mb-md" />
+              <p className="font-headline text-title-lg text-on-surface mb-1">No sales yet</p>
+              <p className="font-body text-body-md text-on-surface-variant mx-auto max-w-sm">
+                Once you add products you&apos;ll be able to record sales here and they&apos;ll show up in this ledger.
+              </p>
+              <Link
+                to="/setup-products"
+                className="inline-flex items-center gap-2 mt-lg h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all"
+              >
+                <Icon name="add_circle" />
+                Add Your First Product
+              </Link>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="py-2xl text-center">
+              <Icon name="point_of_sale" className="text-[48px] text-outline/30 mx-auto mb-md" />
+              <p className="font-headline text-title-lg text-on-surface mb-1">No sales recorded yet</p>
+              <p className="font-body text-body-md text-on-surface-variant mx-auto max-w-sm">
+                Your products are ready. Record your first sale and it will appear here instantly.
+              </p>
+              <button
+                onClick={() => {
+                  setSaved(false)
+                  setRecording(true)
+                }}
+                className="inline-flex items-center gap-2 mt-lg h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 transition-all"
+              >
+                <Icon name="add_circle" />
+                Record Your First Sale
+              </button>
             </div>
           ) : (
             <SalesTable data={visible} onView={setSelected} />
