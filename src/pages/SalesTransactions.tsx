@@ -539,7 +539,7 @@ export function SalesTransactions() {
             Track real-time revenue performance and manage historical order data across all branches.
           </p>
         </div>
-        <div className="flex items-center gap-md">
+        <div className="flex flex-wrap items-center gap-md">
           <div className="flex bg-surface-container-lowest rounded-full p-1 shadow-sm">
             {periods.map((p) => (
               <button

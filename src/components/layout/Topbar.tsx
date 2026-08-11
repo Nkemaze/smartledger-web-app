@@ -10,7 +10,13 @@ const roleLabels: Record<string, string> = {
   ACCOUNTANT: 'Accountant',
 }
 
-export function Topbar({ searchPlaceholder = 'Search transactions, inventory or customers...' }) {
+export function Topbar({
+  searchPlaceholder = 'Search transactions, inventory or customers...',
+  onMenuClick,
+}: {
+  searchPlaceholder?: string
+  onMenuClick?: () => void
+}) {
   const { user, business, logout } = useAuth()
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
@@ -27,8 +33,15 @@ export function Topbar({ searchPlaceholder = 'Search transactions, inventory or 
   const initial = (user?.name || 'S').charAt(0).toUpperCase()
 
   return (
-    <header className="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl z-40 px-xl flex items-center justify-between border-b border-outline-variant/5 shadow-[0_1px_8px_rgba(0,0,0,0.02)]">
-      <div className="flex-1 max-w-xl mx-auto">
+    <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl z-40 px-md sm:px-xl flex items-center justify-between border-b border-outline-variant/5 shadow-[0_1px_8px_rgba(0,0,0,0.02)]">
+      <button
+        className="lg:hidden p-2 -ml-sm text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors"
+        onClick={onMenuClick}
+        aria-label="Open menu"
+      >
+        <Icon name="menu" />
+      </button>
+      <div className="flex-1 max-w-xl mx-auto hidden md:block">
         <div className="relative flex items-center group">
           <Icon
             name="search"
@@ -41,7 +54,10 @@ export function Topbar({ searchPlaceholder = 'Search transactions, inventory or 
           />
         </div>
       </div>
-      <div className="flex items-center gap-lg ml-xl">
+      <div className="flex items-center gap-sm sm:gap-lg ml-auto md:ml-xl">
+        <button className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+          <Icon name="search" />
+        </button>
         <button className="relative p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
           <Icon name="notifications" />
           {unread > 0 && (

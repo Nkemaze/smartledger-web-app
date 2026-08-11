@@ -139,7 +139,7 @@ export function Inventory() {
           </div>
           <h1 className="font-headline text-headline-lg text-on-surface">Product Catalog</h1>
         </div>
-        <div className="flex items-center gap-md">
+        <div className="flex flex-wrap items-center gap-md">
           <button className="flex items-center gap-2 h-11 px-lg bg-surface-container-lowest text-on-surface rounded-xl font-label text-label-md font-bold shadow-sm hover:bg-surface-container-high transition-colors">
             <Icon name="download" className="text-primary" />
             Export CSV

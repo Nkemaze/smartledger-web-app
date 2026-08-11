@@ -95,7 +95,7 @@ export function TaxSummary() {
             Real-time monitoring of your tax liabilities, VAT reconciliation, and statutory filing deadlines.
           </p>
         </div>
-        <div className="flex items-center gap-md">
+        <div className="flex flex-wrap items-center gap-md">
           <button className="flex items-center gap-2 h-11 px-lg bg-surface-container-lowest text-on-surface rounded-xl font-label text-label-md font-bold shadow-sm hover:bg-surface-container-high transition-colors">
             <Icon name="history" className="text-primary" />
             Archive

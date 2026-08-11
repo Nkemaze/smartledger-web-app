@@ -43,7 +43,7 @@ export function PermissionsRoles() {
             active sessions.
           </p>
         </div>
-        <div className="flex items-center gap-md">
+        <div className="flex flex-wrap items-center gap-md">
           <Badge tone="info" icon="verified_user">
             Active Roles 08
           </Badge>

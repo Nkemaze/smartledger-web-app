@@ -14,7 +14,7 @@ const navItems = [
   { to: '/staff', label: 'Staff', icon: 'badge' },
 ]
 
-function Logo() {
+function Logo({ onClose }: { onClose?: () => void }) {
   return (
     <div className="pt-5 mb-5 h-16 flex items-center px-lg border-b border-outline-variant/5">
       <img
@@ -22,23 +22,48 @@ function Logo() {
         alt="SmartLedger Logo"
         className="h-8 w-auto object-contain"
       />
+      <button
+        className="lg:hidden ml-auto p-1 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors"
+        onClick={onClose}
+        aria-label="Close menu"
+      >
+        <Icon name="close" />
+      </button>
     </div>
   )
 }
 
-export function Sidebar() {
+export function Sidebar({
+  mobileOpen = false,
+  onClose,
+}: {
+  mobileOpen?: boolean
+  onClose?: () => void
+}) {
   const { logout } = useAuth()
   const navigate = useNavigate()
   return (
-    <aside className="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col border-r border-outline-variant/10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-      <Logo />
-      <nav className="flex-1 py-lg px-md overflow-y-auto space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-[45] bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col border-r border-outline-variant/10 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <Logo onClose={onClose} />
+        <nav className="flex-1 py-lg px-md overflow-y-auto space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={onClose}
+              className={({ isActive }) =>
               `flex items-center gap-md px-md py-3 rounded-xl transition-all group ${
                 isActive
                   ? 'bg-secondary-container text-on-secondary-container'
@@ -62,6 +87,7 @@ export function Sidebar() {
         <div className="pt-xl mt-xl border-t border-outline-variant/10">
           <NavLink
             to="/settings"
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-md px-md py-3 rounded-xl transition-all group ${
                 isActive
@@ -77,6 +103,7 @@ export function Sidebar() {
           <button
             className="w-full flex items-center gap-md px-md py-3 rounded-xl transition-all group text-on-surface-variant hover:bg-error-container hover:text-error"
             onClick={() => {
+              onClose?.()
               logout()
               navigate('/login', { replace: true })
             }}
@@ -86,6 +113,7 @@ export function Sidebar() {
           </button>
         </div>
       </nav>
-    </aside>
+      </aside>
+    </>
   )
 }

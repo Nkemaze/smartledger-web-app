@@ -321,7 +321,7 @@ export function Dashboard() {
                 </Link>
               }
             />
-            <div className="overflow-x-auto -mx-xl px-xl">
+            <div className="overflow-x-auto lg:-mx-xl lg:px-xl">
               <table className="w-full text-left">
                 <thead>
                   <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10">
