@@ -260,13 +260,13 @@ export function TaxSummary() {
           }
         />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left">
+          <table className="w-full min-w-[520px] md:min-w-[800px] text-left">
             <thead>
               <tr className="text-[12px] uppercase tracking-wider text-outline border-y border-outline-variant/10 bg-surface-container-low/40">
                 <th className="py-3 px-xl font-semibold">Period</th>
-                <th className="py-3 px-4 font-semibold">Tax Type</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">Tax Type</th>
                 <th className="py-3 px-4 font-semibold">Amount</th>
-                <th className="py-3 px-4 font-semibold">Submission Date</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">Submission Date</th>
                 <th className="py-3 px-4 font-semibold">Status</th>
                 <th className="py-3 px-4 text-right font-semibold">Action</th>
               </tr>
@@ -277,7 +277,7 @@ export function TaxSummary() {
                   <td className="py-4 px-xl">
                     <span className="font-label text-label-md font-bold text-on-surface">{f.period}</span>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 hidden md:table-cell">
                     <div className="flex items-center gap-2 font-label text-label-md text-on-surface">
                       <Icon name="receipt" className="text-primary" />
                       VAT Return
@@ -286,7 +286,7 @@ export function TaxSummary() {
                   <td className="py-4 px-4 font-body text-body-md font-semibold text-on-surface">
                     {compactMoney(n(f.vatCollected) - n(f.vatPaid))}
                   </td>
-                  <td className="py-4 px-4 text-[12px] text-on-surface-variant">
+                  <td className="py-4 px-4 hidden md:table-cell text-[12px] text-on-surface-variant">
                     {f.submittedAt ? new Date(f.submittedAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                   </td>
                   <td className="py-4 px-4">

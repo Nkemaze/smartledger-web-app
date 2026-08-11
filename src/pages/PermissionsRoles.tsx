@@ -81,7 +81,7 @@ export function PermissionsRoles() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left">
+          <table className="w-full min-w-[640px] md:min-w-[760px] text-left">
             <thead>
               <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
                 <th className="py-3 px-xl font-semibold">System Capabilities</th>
@@ -114,7 +114,7 @@ export function PermissionsRoles() {
                           </span>
                           <div>
                             <p className="font-label text-label-md font-bold text-on-surface">{row.name}</p>
-                            <p className="text-[12px] text-on-surface-variant">{row.helper}</p>
+                            <p className="hidden md:block text-[12px] text-on-surface-variant">{row.helper}</p>
                           </div>
                         </div>
                       </td>

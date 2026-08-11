@@ -45,7 +45,7 @@ function StaffRow({ member, onBlock }: { member: StaffMember; onBlock: (id: stri
           {member.isActive ? 'Active' : 'Inactive'}
         </Badge>
       </td>
-      <td className="py-4 px-4 text-[12px] text-on-surface-variant">
+      <td className="py-4 px-4 hidden md:table-cell text-[12px] text-on-surface-variant">
         {new Date(member.createdAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
       </td>
       <td className="py-4 px-4">
@@ -241,13 +241,13 @@ export function StaffList() {
               <p className="text-[12px] text-on-surface-variant">Try clearing the role or status filter.</p>
             </div>
           ) : (
-            <table className="w-full min-w-[760px] text-left">
+            <table className="w-full min-w-[540px] md:min-w-[760px] text-left">
               <thead>
                 <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
                   <th className="py-3 px-xl font-semibold">Name & Profile</th>
                   <th className="py-3 px-4 font-semibold">Role</th>
                   <th className="py-3 px-4 font-semibold">Status</th>
-                  <th className="py-3 px-4 font-semibold">Joined</th>
+                  <th className="py-3 px-4 font-semibold hidden md:table-cell">Joined</th>
                   <th className="py-3 px-4 font-semibold">Actions</th>
                 </tr>
               </thead>

@@ -54,8 +54,8 @@ export function Login() {
     <AuthLayout>
       <div className="flex flex-col w-full max-w-container-max mx-auto items-center justify-center">
         <AmbientBackground />
-        <div className="relative z-10 w-full max-w-[440px] px-gutter">
-          <div className="bg-surface-container-lowest shadow-xl rounded-xl p-xl flex flex-col items-center">
+        <div className="relative z-10 w-full max-w-[440px] px-0 sm:px-gutter">
+          <div className="bg-surface-container-lowest shadow-xl rounded-xl p-lg sm:p-xl flex flex-col items-center">
             <div className="mb-xl">
               <img
                 src="/smartledger-logo.png"
@@ -67,12 +67,12 @@ export function Login() {
               <h1 className="font-headline text-headline-lg text-on-surface mb-1">Welcome back</h1>
               <p className="font-body text-body-md text-on-surface-variant">Sign in to manage your store</p>
             </div>
-            <div className="w-full flex gap-md mb-xl">
-              <button className="flex-1 flex items-center justify-center gap-2 py-md px-lg bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors duration-200">
+            <div className="w-full flex gap-sm sm:gap-md mb-xl">
+              <button className="flex-1 flex items-center justify-center gap-2 py-md px-sm sm:px-lg bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors duration-200 min-w-0">
                 <GoogleIcon />
                 <span className="font-label text-label-md text-on-surface">Google</span>
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-md px-lg bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors duration-200">
+              <button className="flex-1 flex items-center justify-center gap-2 py-md px-sm sm:px-lg bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors duration-200 min-w-0">
                 <AppleIcon />
                 <span className="font-label text-label-md text-on-surface">Apple</span>
               </button>

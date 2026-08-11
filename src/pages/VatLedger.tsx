@@ -298,13 +298,13 @@ export function VatLedger() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left">
+          <table className="w-full min-w-[540px] md:min-w-[820px] text-left">
             <thead>
               <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
                 <th className="py-3 px-xl font-semibold">Reference</th>
-                <th className="py-3 px-4 font-semibold">Date</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">Date</th>
                 <th className="py-3 px-4 font-semibold">Net Amount</th>
-                <th className="py-3 px-4 font-semibold">VAT (7.5%)</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">VAT (7.5%)</th>
                 <th className="py-3 px-4 font-semibold">Total</th>
                 <th className="py-3 px-4 font-semibold">Status</th>
               </tr>
@@ -326,13 +326,13 @@ export function VatLedger() {
                       </div>
                       <p className="text-[12px] text-on-surface-variant">{v.description ?? v.category}</p>
                     </td>
-                    <td className="py-4 px-4 text-[12px] text-on-surface-variant">
+                    <td className="py-4 px-4 hidden md:table-cell text-[12px] text-on-surface-variant">
                       {new Date(v.occurredAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="py-4 px-4 font-body text-body-md font-semibold text-on-surface">
                       FCFA {Math.round(n(v.amount)).toLocaleString()}
                     </td>
-                    <td className="py-4 px-4 font-body text-body-md text-on-surface">
+                    <td className="py-4 px-4 hidden md:table-cell font-body text-body-md text-on-surface">
                       FCFA {Math.round(n(v.vatAmount)).toLocaleString()}
                     </td>
                     <td className="py-4 px-4 font-body text-body-md font-bold text-on-surface">

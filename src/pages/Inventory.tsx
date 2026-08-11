@@ -47,10 +47,10 @@ function ProductRow({ item }: { item: ApiProduct }) {
           </div>
         </div>
       </td>
-      <td className="py-4 px-4">
+      <td className="py-4 px-4 hidden md:table-cell">
         <span className="font-label text-label-md text-on-surface-variant">{item.sku ?? '—'}</span>
       </td>
-      <td className="py-4 px-4">
+      <td className="py-4 px-4 hidden md:table-cell">
         <Badge tone="neutral">{item.category ?? 'Other'}</Badge>
       </td>
       <td className="py-4 px-4">
@@ -61,7 +61,7 @@ function ProductRow({ item }: { item: ApiProduct }) {
       <td className="py-4 px-4 font-body text-body-md font-semibold text-on-surface">
         FCFA {Math.round(n(item.unitPrice)).toLocaleString()}
       </td>
-      <td className="py-4 px-4 font-body text-body-md font-semibold text-on-surface">
+      <td className="py-4 px-4 hidden md:table-cell font-body text-body-md font-semibold text-on-surface">
         FCFA {Math.round(n(item.unitPrice) * item.stockQuantity).toLocaleString()}
       </td>
       <td className="py-4 px-4">
@@ -248,15 +248,15 @@ export function Inventory() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[560px] md:min-w-[900px] text-left">
             <thead>
               <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
                 <th className="py-3 px-xl font-semibold">Product Details</th>
-                <th className="py-3 px-4 font-semibold">SKU</th>
-                <th className="py-3 px-4 font-semibold">Category</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">SKU</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">Category</th>
                 <th className="py-3 px-4 font-semibold">Stock Status</th>
                 <th className="py-3 px-4 font-semibold">Unit Price</th>
-                <th className="py-3 px-4 font-semibold">Total Value</th>
+                <th className="py-3 px-4 font-semibold hidden md:table-cell">Total Value</th>
                 <th className="py-3 px-4 font-semibold">Actions</th>
               </tr>
             </thead>

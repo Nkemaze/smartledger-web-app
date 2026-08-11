@@ -68,8 +68,8 @@ export function OtpVerification() {
     <AuthLayout>
       <div className="flex flex-col w-full max-w-container-max mx-auto items-center justify-center">
         <AmbientBackground />
-        <div className="relative z-10 w-full max-w-[480px] px-gutter">
-          <div className="bg-surface-container-lowest shadow-xl rounded-xl p-xl flex flex-col items-center text-center">
+        <div className="relative z-10 w-full max-w-[480px] px-0 sm:px-gutter">
+          <div className="bg-surface-container-lowest shadow-xl rounded-xl p-lg sm:p-xl flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-secondary-container/40 flex items-center justify-center mb-xl">
               <Icon name="shield_lock" className="text-[32px] text-secondary" />
             </div>
@@ -78,14 +78,14 @@ export function OtpVerification() {
               We&apos;ve sent a 6-digit code to{' '}
               <span className="font-label text-on-surface">{phone || 'your phone'}</span>
             </p>
-            <div className="flex gap-2 mt-2xl mb-2xl">
+            <div className="w-full grid grid-cols-6 gap-2 mt-2xl mb-2xl">
               {otp.map((digit, i) => (
                 <input
                   key={i}
                   ref={(el) => {
                     refs.current[i] = el
                   }}
-                  className={`w-12 h-14 text-center font-headline text-headline-lg bg-surface rounded-lg outline-none border-2 transition-all ${
+                  className={`w-full h-14 text-center font-headline text-headline-lg bg-surface rounded-lg outline-none border-2 transition-all ${
                     digit
                       ? 'border-primary text-primary'
                       : 'border-outline-variant/40 text-on-surface focus:border-primary'
@@ -128,7 +128,7 @@ export function OtpVerification() {
               </button>
             </p>
           </div>
-          <div className="mt-xl flex items-center justify-center gap-xl opacity-60">
+          <div className="mt-xl flex flex-wrap items-center justify-center gap-md sm:gap-xl opacity-60">
             <div className="flex items-center gap-1">
               <Icon name="verified_user" className="text-[16px] text-secondary" />
               <span className="font-label text-label-sm text-on-surface-variant">Enterprise Ready</span>

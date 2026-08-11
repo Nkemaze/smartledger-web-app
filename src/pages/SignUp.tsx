@@ -61,7 +61,7 @@ export function SignUp() {
 
   return (
     <AuthLayout>
-      <div className="flex flex-col lg:flex-row min-h-[870px] gap-xl items-stretch overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-xl items-stretch lg:min-h-[870px] lg:overflow-hidden">
         <div className="hidden lg:flex flex-col w-1/2 relative p-3xl justify-between overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full -z-10 bg-surface-container-highest/30">
             <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[100px] animate-pulse" />
@@ -125,8 +125,8 @@ export function SignUp() {
             </div>
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-center p-gutter lg:p-0">
-          <div className="w-full max-w-[520px] bg-surface-container-lowest p-xl lg:p-3xl rounded-3xl shadow-xl shadow-on-background/5 flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-0 sm:px-gutter lg:p-0">
+          <div className="w-full max-w-[520px] bg-surface-container-lowest p-lg sm:p-xl lg:p-3xl rounded-3xl shadow-xl shadow-on-background/5 flex flex-col">
             <div className="mb-xl text-center lg:text-left">
               <h1 className="font-headline text-headline-lg text-on-background mb-1">Start your 14-day free trial</h1>
               <p className="font-body text-body-md text-on-surface-variant">Join 10,000+ retail owners growing their business.</p>
@@ -252,7 +252,7 @@ export function SignUp() {
               <p className="font-body text-body-md text-on-surface-variant">
                 Already have an account? <Link to="/login" className="text-secondary font-bold hover:underline">Log in</Link>
               </p>
-              <div className="flex items-center gap-lg grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+              <div className="flex flex-wrap items-center justify-center gap-md sm:gap-lg grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                 <div className="flex items-center gap-1">
                   <Icon name="verified_user" className="text-[18px]" />
                   <span className="font-label text-label-sm uppercase tracking-tighter">PCI Compliant</span>

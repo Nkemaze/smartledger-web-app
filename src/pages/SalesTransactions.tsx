@@ -31,13 +31,13 @@ function periodStart(period: string): Date {
 
 function SalesTable({ data, onView }: { data: ApiTransaction[]; onView: (t: ApiTransaction) => void }) {
   return (
-    <table className="w-full min-w-[820px] text-left">
+    <table className="w-full min-w-[620px] md:min-w-[820px] text-left">
       <thead>
         <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10">
-          <th className="py-3 px-xl font-semibold">Date & Time</th>
-          <th className="py-3 px-4 font-semibold">Order ID</th>
+          <th className="py-3 pl-4 pr-4 sm:pl-xl font-semibold">Date & Time</th>
+          <th className="py-3 px-4 font-semibold hidden md:table-cell">Order ID</th>
           <th className="py-3 px-4 font-semibold">Customer</th>
-          <th className="py-3 px-4 font-semibold">Items</th>
+          <th className="py-3 px-4 font-semibold hidden md:table-cell">Items</th>
           <th className="py-3 px-4 font-semibold">Status</th>
           <th className="py-3 px-4 font-semibold">Amount</th>
           <th className="py-3 px-4 font-semibold">Actions</th>
@@ -61,12 +61,12 @@ function SalesTable({ data, onView }: { data: ApiTransaction[]; onView: (t: ApiT
               className="border-b border-outline-variant/5 last:border-0 hover:bg-surface-container-low/50 transition-colors cursor-pointer"
               onClick={() => onView(t)}
             >
-              <td className="py-4 px-xl">
+              <td className="py-4 pl-4 pr-4 sm:pl-xl">
                 <p className="font-label text-label-md font-semibold text-on-surface">
                   {date}, {time}
                 </p>
               </td>
-              <td className="py-4 px-4">
+              <td className="py-4 px-4 hidden md:table-cell">
                 <span className="font-label text-label-md font-mono text-primary bg-primary/5 px-2 py-1 rounded">
                   {t.id.slice(0, 8).toUpperCase()}
                 </span>
@@ -80,7 +80,7 @@ function SalesTable({ data, onView }: { data: ApiTransaction[]; onView: (t: ApiT
                   </div>
                 </div>
               </td>
-              <td className="py-4 px-4 font-body text-body-md text-on-surface-variant">
+              <td className="py-4 px-4 hidden md:table-cell font-body text-body-md text-on-surface-variant">
                 {itemCount} {itemCount === 1 ? 'item' : 'items'}
               </td>
               <td className="py-4 px-4">
