@@ -250,7 +250,7 @@ export function AiAdvisor() {
             {messages.some((m) => m.source === 'ai') ? (
               <Badge tone="success">Powered by AI</Badge>
             ) : (
-              <Badge tone="info">Offline assistant</Badge>
+              <Badge tone="info">Assistant</Badge>
             )}
           </div>
         </div>
@@ -265,9 +265,9 @@ export function AiAdvisor() {
                     : 'bg-surface-container-low rounded-bl-sm text-on-surface'
                 }`}
               >
-                {msg.source && (
+                {msg.source === 'ai' && (
                   <p className="text-[10px] font-label font-bold uppercase tracking-wider mb-1 opacity-60">
-                    {msg.source === 'ai' ? 'AI Advisor' : 'Offline Summary'}
+                    AI Advisor
                   </p>
                 )}
                 {msg.content}
