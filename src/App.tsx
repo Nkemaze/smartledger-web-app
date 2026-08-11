@@ -20,6 +20,7 @@ const AiAdvisor = lazy(() => import('@/pages/AiAdvisor').then((m) => ({ default:
 const StaffList = lazy(() => import('@/pages/StaffList').then((m) => ({ default: m.StaffList })))
 const StaffDetails = lazy(() => import('@/pages/StaffDetails').then((m) => ({ default: m.StaffDetails })))
 const PermissionsRoles = lazy(() => import('@/pages/PermissionsRoles').then((m) => ({ default: m.PermissionsRoles })))
+const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
 
 function Loading() {
   return (
@@ -97,7 +98,7 @@ export default function App() {
           <Route path="/permissions" element={<SuspenseRoute><PermissionsRoles /></SuspenseRoute>} />
           <Route path="/customers" element={<PlaceholderPage title="Customers" icon="groups" description="Manage your customer relationships and loyalty programs." />} />
           <Route path="/suppliers" element={<PlaceholderPage title="Suppliers" icon="local_shipping" description="Manage your supplier relationships and purchase orders." />} />
-          <Route path="/settings" element={<PlaceholderPage title="Settings" icon="settings" description="Configure your store preferences and integrations." />} />
+          <Route path="/settings" element={<SuspenseRoute><Settings /></SuspenseRoute>} />
           <Route path="*" element={<SuspenseRoute><Dashboard /></SuspenseRoute>} />
         </Route>
       </Routes>
