@@ -3,6 +3,13 @@ const PHONE_KEY = 'smartledger_pending_phone'
 const USER_KEY = 'smartledger_user'
 const BUSINESS_KEY = 'smartledger_business'
 
+// Empty in development so Vite's /api and /uploads proxies are used.
+// Set VITE_API_URL to the deployed backend origin in production.
+export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
+
+export const apiAssetUrl = (path: string) =>
+  path.startsWith('http://') || path.startsWith('https://') ? path : `${API_URL}${path}`
+
 export type ApiErrorBody = { success: false; error: string }
 
 export class ApiError extends Error {
@@ -40,7 +47,7 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
     headers.set('Authorization', `Bearer ${token}`)
   }
 
-  const res = await fetch(`/api${path}`, { ...options, headers })
+  const res = await fetch(`${API_URL}/api${path}`, { ...options, headers })
 
   let payload: unknown = null
   try {

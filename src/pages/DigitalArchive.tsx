@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Icon } from '@/components/ui/Icon'
-import { archiveService } from '@/lib/api'
+import { apiAssetUrl, archiveService } from '@/lib/api'
 import type { ApiDocument } from '@/lib/api'
 
 const tabs = ['All', 'Sales Invoices', 'Expense Receipts', 'Tax Documents']
@@ -266,7 +266,7 @@ export function DigitalArchive() {
                   </div>
                   <div className="border-t border-outline-variant/10 pt-lg flex items-center justify-between">
                     <a
-                      href={doc.fileUrl}
+                      href={apiAssetUrl(doc.fileUrl)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-2 font-label text-label-md text-primary font-bold hover:underline"
