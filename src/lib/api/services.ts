@@ -76,6 +76,21 @@ export const notificationService = {
   markAllRead: () => api.patch<{ count: number }>('/notifications/read-all', {}),
 }
 
+export type DailySummarySettings = {
+  enabled: boolean
+  phone: string
+  schedule: string
+  timezone: string
+  whatsappConfigured: boolean
+}
+
+export const whatsappService = {
+  dailySummary: () => api.get<DailySummarySettings>('/whatsapp/daily-summary'),
+  setDailySummary: (enabled: boolean) =>
+    api.patch<DailySummarySettings>('/whatsapp/daily-summary', { enabled }),
+  testDailySummary: () => api.post<{ message: string }>('/whatsapp/daily-summary/test', {}),
+}
+
 export const archiveService = {
   list: () => api.get<ApiDocument[]>('/archive'),
   upload: (file: File, type: string, transactionId?: string) => {

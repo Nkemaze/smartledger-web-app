@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card'
 import { Icon } from '@/components/ui/Icon'
 import { Badge } from '@/components/ui/Badge'
 import { useAuth } from '@/lib/auth/AuthContext'
-import { businessService } from '@/lib/api'
+import { businessService, whatsappService } from '@/lib/api'
 
 const shopTypes = [
   { value: 'grocery', label: 'Grocery & Supermarket' },
@@ -55,7 +55,7 @@ type BusinessForm = {
 
 export function Settings() {
   const { user, business, refreshBusiness } = useAuth()
-  const [tab, setTab] = useState<'business' | 'profile'>('business')
+  const [tab, setTab] = useState<'business' | 'profile' | 'notifications'>('business')
   const [form, setForm] = useState<BusinessForm>({
     name: '',
     shopType: 'grocery',
@@ -70,6 +70,56 @@ export function Settings() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+
+  // WhatsApp end-of-day summary state
+  const [summaryEnabled, setSummaryEnabled] = useState(false)
+  const [summaryLoading, setSummaryLoading] = useState(true)
+  const [summaryBusy, setSummaryBusy] = useState(false)
+  const [summaryError, setSummaryError] = useState('')
+  const [summaryOk, setSummaryOk] = useState('')
+  const [whatsappConfigured, setWhatsappConfigured] = useState(false)
+
+  useEffect(() => {
+    whatsappService
+      .dailySummary()
+      .then((s) => {
+        setSummaryEnabled(s.enabled)
+        setWhatsappConfigured(s.whatsappConfigured)
+      })
+      .catch(() => setSummaryError('Could not load your WhatsApp preferences.'))
+      .finally(() => setSummaryLoading(false))
+  }, [])
+
+  const toggleSummary = async (enabled: boolean) => {
+    setSummaryBusy(true)
+    setSummaryError('')
+    setSummaryOk('')
+    try {
+      const s = await whatsappService.setDailySummary(enabled)
+      setSummaryEnabled(s.enabled)
+      setSummaryOk(
+        enabled ? 'Daily summary enabled — check WhatsApp this evening.' : 'Daily summary turned off.'
+      )
+    } catch (err) {
+      setSummaryError(err instanceof Error ? err.message : 'Could not save your preference.')
+    } finally {
+      setSummaryBusy(false)
+    }
+  }
+
+  const sendTestSummary = async () => {
+    setSummaryBusy(true)
+    setSummaryError('')
+    setSummaryOk('')
+    try {
+      await whatsappService.testDailySummary()
+      setSummaryOk('Summary sent — check your WhatsApp.')
+    } catch (err) {
+      setSummaryError(err instanceof Error ? err.message : 'Could not send the summary.')
+    } finally {
+      setSummaryBusy(false)
+    }
+  }
 
   const set = (key: keyof BusinessForm) => (value: string) => {
     setForm((f) => ({ ...f, [key]: value }))
@@ -176,6 +226,15 @@ export function Settings() {
         >
           <Icon name="person" className="text-[16px] align-text-bottom mr-1" />
           Profile
+        </button>
+        <button
+          onClick={() => setTab('notifications')}
+          className={`px-lg py-2 rounded-full font-label text-label-md transition-all ${
+            tab === 'notifications' ? 'bg-primary text-on-primary shadow-md shadow-primary/25' : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <Icon name="notifications" className="text-[16px] align-text-bottom mr-1" />
+          Notifications
         </button>
       </div>
 
@@ -474,6 +533,134 @@ export function Settings() {
                 <Icon name="verified_user" className="text-secondary" />
                 <span className="font-label text-label-sm">Phone-verified account</span>
               </div>
+            </Card>
+          </div>
+        </div>
+      )}
+      {tab === 'notifications' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-xl items-start">
+          <Card className="xl:col-span-2 overflow-hidden">
+            <div className="p-xl lg:p-2xl">
+              <div className="flex items-center gap-md mb-lg">
+                <div className="w-11 h-11 rounded-2xl bg-[#25D366]/10 flex items-center justify-center">
+                  <Icon name="chat" className="text-[#25D366]" />
+                </div>
+                <div>
+                  <h2 className="font-headline text-headline-md text-on-surface">WhatsApp Daily Summary</h2>
+                  <p className="font-label text-label-sm text-on-surface-variant">
+                    Your income, expenses and profit — delivered every evening.
+                  </p>
+                </div>
+              </div>
+
+              {summaryOk && (
+                <div className="flex items-center gap-2 bg-primary-container/40 rounded-xl px-lg py-md mb-lg">
+                  <Icon name="check_circle" className="text-primary" />
+                  <p className="font-body text-body-sm text-on-surface">{summaryOk}</p>
+                </div>
+              )}
+              {summaryError && (
+                <div className="flex items-start gap-2 bg-error-container/40 rounded-xl px-lg py-md mb-lg">
+                  <Icon name="error_outline" className="text-error mt-px" />
+                  <p className="font-body text-body-sm text-error">{summaryError}</p>
+                </div>
+              )}
+
+              {summaryLoading ? (
+                <div className="flex items-center justify-center py-2xl">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-lg">
+                  <div className="flex items-center justify-between gap-lg p-lg bg-surface-container-low/60 rounded-2xl">
+                    <div className="flex items-start gap-md">
+                      <Icon name="schedule" className="text-primary flex-shrink-0 mt-px" />
+                      <div>
+                        <p className="font-body text-body-md text-on-surface">
+                          End-of-day summary to {user?.phone || business?.phone || 'your WhatsApp'}
+                        </p>
+                        <p className="font-label text-label-sm text-on-surface-variant">
+                          Sent daily at 20:00 (Africa/Douala)
+                        </p>
+                        {!whatsappConfigured && (
+                          <p className="font-label text-label-sm text-error mt-1">
+                            WhatsApp is not connected on the server yet.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      role="switch"
+                      aria-checked={summaryEnabled}
+                      disabled={summaryBusy}
+                      onClick={() => void toggleSummary(!summaryEnabled)}
+                      className={`relative w-12 h-7 rounded-full transition-all flex-shrink-0 ${
+                        summaryEnabled ? 'bg-primary' : 'bg-surface-container-highest'
+                      } disabled:opacity-60`}
+                    >
+                      <span
+                        className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                          summaryEnabled ? 'left-6' : 'left-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-lg p-lg bg-surface-container-low/60 rounded-2xl">
+                    <div className="flex items-start gap-md">
+                      <Icon name="bolt" className="text-secondary flex-shrink-0 mt-px" />
+                      <div>
+                        <p className="font-body text-body-md text-on-surface">Preview now</p>
+                        <p className="font-label text-label-sm text-on-surface-variant">
+                          Send today's numbers to your WhatsApp immediately.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => void sendTestSummary()}
+                      disabled={summaryBusy || !whatsappConfigured}
+                      className="flex items-center gap-2 h-11 px-lg bg-[#25D366] hover:bg-[#1DA851] text-white rounded-xl font-label text-label-md font-bold shadow-lg shadow-[#25D366]/25 active:scale-[0.98] transition-all disabled:opacity-60 flex-shrink-0"
+                    >
+                      {summaryBusy ? <Icon name="sync" className="animate-spin" /> : <Icon name="send" />}
+                      Send test
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <div className="space-y-xl">
+            <Card className="p-xl">
+              <div className="flex items-center gap-md mb-lg">
+                <div className="w-11 h-11 rounded-2xl bg-secondary/10 flex items-center justify-center">
+                  <Icon name="info" className="text-secondary" />
+                </div>
+                <div>
+                  <h3 className="font-headline text-headline-md text-on-surface">What you receive</h3>
+                  <p className="font-label text-label-sm text-on-surface-variant">Every day at 20:00</p>
+                </div>
+              </div>
+              <ul className="space-y-lg">
+                <li className="flex items-start gap-md">
+                  <Icon name="trending_up" className="text-primary flex-shrink-0" />
+                  <p className="font-body text-body-sm text-on-surface-variant">
+                    Total income for the day, with your business name.
+                  </p>
+                </li>
+                <li className="flex items-start gap-md">
+                  <Icon name="receipt_long" className="text-primary flex-shrink-0" />
+                  <p className="font-body text-body-sm text-on-surface-variant">
+                    Expenses recorded and the resulting profit, in your currency.
+                  </p>
+                </li>
+                <li className="flex items-start gap-md">
+                  <Icon name="lock" className="text-primary flex-shrink-0" />
+                  <p className="font-body text-body-sm text-on-surface-variant">
+                    Delivered straight to your WhatsApp — no need to open the app.
+                  </p>
+                </li>
+              </ul>
             </Card>
           </div>
         </div>

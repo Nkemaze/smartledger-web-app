@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Icon } from '@/components/ui/Icon'
+import { authService } from '@/lib/api'
 import { useAuth } from '@/lib/auth/AuthContext'
 
 const features = [
@@ -34,6 +35,72 @@ export function SignUp() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Verification state
+  const [method, setMethod] = useState<'whatsapp' | 'email'>('whatsapp')
+  const [code, setCode] = useState(['', '', '', '', '', ''])
+  const [codeSent, setCodeSent] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
+  const [codeError, setCodeError] = useState('')
+  const [seconds, setSeconds] = useState(0)
+  const [whatsappAvailable, setWhatsappAvailable] = useState(false)
+  const codeRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  useEffect(() => {
+    authService
+      .verificationChannels()
+      .then((c) => {
+        setWhatsappAvailable(c.whatsapp)
+        // Default to the first working channel.
+        setMethod(c.whatsapp ? 'whatsapp' : 'email')
+      })
+      .catch(() => setMethod('email'))
+  }, [])
+
+  useEffect(() => {
+    if (seconds <= 0) return
+    const t = setTimeout(() => setSeconds((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+  }, [seconds])
+
+  const emailAvailable = /\S+@\S+\.\S+/.test(email)
+  const destination = method === 'whatsapp' ? phone : email
+
+  const handleCodeDigit = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1)
+    const next = [...code]
+    next[index] = digit
+    setCode(next)
+    if (digit && index < 5) codeRefs.current[index + 1]?.focus()
+  }
+
+  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) codeRefs.current[index - 1]?.focus()
+  }
+
+  const sendCode = async (isResend = false) => {
+    if (sendingCode || seconds > 0) return
+    if (method === 'whatsapp' && phone.replace(/\D/g, '').length < 8) {
+      setCodeError('Enter a valid phone number first.')
+      return
+    }
+    if (method === 'email' && !emailAvailable) {
+      setCodeError('Enter a valid email address first.')
+      return
+    }
+    setSendingCode(true)
+    setCodeError('')
+    try {
+      await authService.requestVerification(method, destination)
+      setCodeSent(true)
+      setSeconds(45)
+      if (isResend) setCode(['', '', '', '', '', ''])
+    } catch (err) {
+      setCodeError(err instanceof Error ? err.message : 'Unable to send the code.')
+    } finally {
+      setSendingCode(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -41,17 +108,28 @@ export function SignUp() {
       setError('Please accept the Terms of Service to continue.')
       return
     }
+    const joined = code.join('')
+    if (!codeSent) {
+      setError('Please request a verification code first.')
+      return
+    }
+    if (joined.length !== 6) {
+      setError('Enter the 6-digit verification code.')
+      return
+    }
     setLoading(true)
     try {
       await signUp({
         ownerName,
-        email,
+        email: emailAvailable ? email : undefined,
         phone,
         password,
         shopType: shopType || 'grocery',
         businessName: `${ownerName.split(' ')[0]}'s Store`,
+        verificationMethod: method,
+        verificationCode: joined,
       })
-      navigate('/verify-otp', { replace: true })
+      navigate('/setup', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create your account. Please try again.')
     } finally {
@@ -217,6 +295,100 @@ export function SignUp() {
                   </select>
                   <Icon name="expand_more" className="absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" />
                 </div>
+              </div>
+              <div className="flex flex-col gap-2 group">
+                <label className="font-label text-label-md text-on-surface-variant group-focus-within:text-primary transition-colors">
+                  Verify your account
+                </label>
+                <p className="font-body text-body-sm text-on-surface-variant -mt-1">
+                  Choose how you'd like to receive your 6-digit code.
+                </p>
+                <div className="grid grid-cols-2 gap-md mt-1">
+                  <button
+                    type="button"
+                    disabled={!whatsappAvailable}
+                    onClick={() => setMethod('whatsapp')}
+                    className={`flex items-center gap-2 p-md rounded-xl border-2 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      method === 'whatsapp'
+                        ? 'border-[#25D366] bg-[#25D366]/10'
+                        : 'border-outline-variant/40 bg-surface-container hover:border-outline-variant'
+                    }`}
+                  >
+                    <Icon name="chat" className={`text-[20px] ${method === 'whatsapp' ? 'text-[#1DA851]' : 'text-on-surface-variant'}`} />
+                    <div className="min-w-0">
+                      <p className="font-label text-label-md text-on-surface">WhatsApp</p>
+                      <p className="font-body text-body-sm text-on-surface-variant truncate">
+                        {whatsappAvailable ? phone || 'Your phone number' : 'Temporarily unavailable'}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!emailAvailable}
+                    onClick={() => setMethod('email')}
+                    className={`flex items-center gap-2 p-md rounded-xl border-2 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      method === 'email'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-outline-variant/40 bg-surface-container hover:border-outline-variant'
+                    }`}
+                  >
+                    <Icon name="mail" className={`text-[20px] ${method === 'email' ? 'text-primary' : 'text-on-surface-variant'}`} />
+                    <div className="min-w-0">
+                      <p className="font-label text-label-md text-on-surface">Email</p>
+                      <p className="font-body text-body-sm text-on-surface-variant truncate">
+                        {emailAvailable ? email : 'Add an email above'}
+                      </p>
+                    </div>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void sendCode(codeSent)}
+                  disabled={sendingCode || seconds > 0}
+                  className="mt-1 h-11 rounded-xl font-label text-label-md font-bold border-2 border-dashed border-outline-variant/60 hover:border-primary hover:text-primary text-on-surface-variant transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {sendingCode ? <Icon name="sync" className="animate-spin" /> : <Icon name="send" />}
+                  {sendingCode
+                    ? 'Sending...'
+                    : seconds > 0
+                      ? `Resend in ${seconds}s`
+                      : codeSent
+                        ? 'Resend code'
+                        : `Send code via ${method === 'whatsapp' ? 'WhatsApp' : 'email'}`}
+                </button>
+                {codeSent && (
+                  <>
+                    <p className="font-body text-body-sm text-on-surface-variant mt-2">
+                      Code sent to <span className="font-label text-on-surface">{destination}</span>
+                    </p>
+                    <div className="grid grid-cols-6 gap-2 mt-1">
+                      {code.map((digit, i) => (
+                        <input
+                          key={i}
+                          ref={(el) => {
+                            codeRefs.current[i] = el
+                          }}
+                          className={`w-full h-12 text-center font-headline text-headline-md bg-surface-container rounded-lg outline-none border-2 transition-all ${
+                            digit
+                              ? 'border-primary text-primary'
+                              : 'border-outline-variant/40 text-on-surface focus:border-primary'
+                          }`}
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handleCodeDigit(i, e.target.value)}
+                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+                {codeError && (
+                  <div className="flex items-start gap-2 bg-error-container/40 rounded-xl px-md py-sm">
+                    <Icon name="error_outline" className="text-error text-[18px] mt-px flex-shrink-0" />
+                    <p className="font-body text-body-sm text-error">{codeError}</p>
+                  </div>
+                )}
               </div>
               {error && (
                 <div className="flex items-start gap-2 bg-error-container/40 rounded-xl px-md py-sm">
