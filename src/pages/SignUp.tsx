@@ -206,7 +206,7 @@ export function SignUp() {
         <div className="flex-1 flex items-center justify-center px-0 sm:px-gutter lg:p-0">
           <div className="w-full max-w-[520px] bg-surface-container-lowest p-lg sm:p-xl lg:p-3xl rounded-3xl shadow-xl shadow-on-background/5 flex flex-col">
             <div className="mb-xl text-center lg:text-left">
-              <h1 className="font-headline text-headline-lg text-on-background mb-1">Start your 14-day free trial</h1>
+              <h1 className="font-headline text-headline-lg text-on-background mb-1">Start your 1-month free trial</h1>
               <p className="font-body text-body-md text-on-surface-variant">Join 10,000+ retail owners growing their business.</p>
             </div>
             <form

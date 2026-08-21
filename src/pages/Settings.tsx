@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import { Icon } from '@/components/ui/Icon'
 import { Badge } from '@/components/ui/Badge'
 import { useAuth } from '@/lib/auth/AuthContext'
-import { businessService, whatsappService } from '@/lib/api'
+import { businessService, whatsappService, subscriptionService } from '@/lib/api'
+import type { ApiSubscription, PlanDefinition } from '@/lib/api'
 
 const shopTypes = [
   { value: 'grocery', label: 'Grocery & Supermarket' },
@@ -39,6 +41,17 @@ const roleLabels: Record<string, string> = {
   ACCOUNTANT: 'Accountant',
 }
 
+const subscriptionStatusMeta: Record<string, { label: string; tone: 'success' | 'warning' | 'error' }> = {
+  TRIALING: { label: 'Free Trial', tone: 'warning' },
+  ACTIVE: { label: 'Active', tone: 'success' },
+  EXPIRED: { label: 'Expired', tone: 'error' },
+}
+
+const formatDate = (d?: string | null) =>
+  d
+    ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+
 const inputClass =
   'w-full h-12 px-md bg-surface-container rounded-xl outline-none focus:ring-2 focus:ring-primary/20 border-l-4 border-transparent focus:border-primary transition-all'
 
@@ -55,7 +68,13 @@ type BusinessForm = {
 
 export function Settings() {
   const { user, business, refreshBusiness } = useAuth()
-  const [tab, setTab] = useState<'business' | 'profile' | 'notifications'>('business')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<'business' | 'profile' | 'notifications' | 'billing'>(() => {
+    const requested = searchParams.get('tab')
+    return requested === 'billing' || requested === 'profile' || requested === 'notifications'
+      ? requested
+      : 'business'
+  })
   const [form, setForm] = useState<BusinessForm>({
     name: '',
     shopType: 'grocery',
@@ -78,6 +97,44 @@ export function Settings() {
   const [summaryError, setSummaryError] = useState('')
   const [summaryOk, setSummaryOk] = useState('')
   const [whatsappConfigured, setWhatsappConfigured] = useState(false)
+
+  // Subscription / billing state (Business Plan §2.4: Basic, Standard,
+  // Premium + a 1-month free trial granted at signup)
+  const [subscription, setSubscription] = useState<ApiSubscription | null>(null)
+  const [plans, setPlans] = useState<PlanDefinition[]>([])
+  const [billingLoading, setBillingLoading] = useState(true)
+  const [billingBusy, setBillingBusy] = useState<string | null>(null)
+  const [billingError, setBillingError] = useState('')
+  const [billingOk, setBillingOk] = useState('')
+
+  useEffect(() => {
+    Promise.all([subscriptionService.me(), subscriptionService.plans()])
+      .then(([sub, catalog]) => {
+        setSubscription(sub)
+        setPlans(catalog)
+      })
+      .catch(() => setBillingError('Could not load your subscription details.'))
+      .finally(() => setBillingLoading(false))
+  }, [])
+
+  const choosePlan = async (plan: PlanDefinition) => {
+    setBillingBusy(plan.plan)
+    setBillingError('')
+    setBillingOk('')
+    try {
+      const sub = await subscriptionService.selectPlan(plan.plan)
+      setSubscription(sub)
+      setBillingOk(
+        sub.status === 'TRIALING'
+          ? 'Your 1-month free trial has started. Enjoy full access!'
+          : `You are now on the ${sub.planName} plan.`
+      )
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Could not update your plan.')
+    } finally {
+      setBillingBusy(null)
+    }
+  }
 
   useEffect(() => {
     whatsappService
@@ -235,6 +292,15 @@ export function Settings() {
         >
           <Icon name="notifications" className="text-[16px] align-text-bottom mr-1" />
           Notifications
+        </button>
+        <button
+          onClick={() => setTab('billing')}
+          className={`px-lg py-2 rounded-full font-label text-label-md transition-all ${
+            tab === 'billing' ? 'bg-primary text-on-primary shadow-md shadow-primary/25' : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <Icon name="workspace_premium" className="text-[16px] align-text-bottom mr-1" />
+          Subscription
         </button>
       </div>
 
@@ -663,6 +729,141 @@ export function Settings() {
               </ul>
             </Card>
           </div>
+        </div>
+      )}
+      {tab === 'billing' && (
+        <div className="space-y-xl">
+          <Card className="overflow-hidden">
+            <div className="p-xl lg:p-2xl">
+              <div className="flex items-center gap-md mb-lg">
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Icon name="workspace_premium" className="text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-headline text-headline-md text-on-surface">Your Subscription</h2>
+                  <p className="font-label text-label-sm text-on-surface-variant">
+                    Every business starts with a 1-month free trial — no payment required.
+                  </p>
+                </div>
+              </div>
+
+              {billingOk && (
+                <div className="flex items-center gap-2 bg-primary-container/40 rounded-xl px-lg py-md mb-lg">
+                  <Icon name="check_circle" className="text-primary" />
+                  <p className="font-body text-body-sm text-on-surface">{billingOk}</p>
+                </div>
+              )}
+              {billingError && (
+                <div className="flex items-start gap-2 bg-error-container/40 rounded-xl px-lg py-md mb-lg">
+                  <Icon name="error_outline" className="text-error mt-px" />
+                  <p className="font-body text-body-sm text-error">{billingError}</p>
+                </div>
+              )}
+
+              {billingLoading ? (
+                <div className="flex items-center justify-center py-xl">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                subscription && (
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-lg p-lg bg-surface-container-low/60 rounded-2xl">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-md flex-wrap">
+                        <p className="font-headline text-title-lg text-on-surface">{subscription.planName} plan</p>
+                        <Badge
+                          tone={subscriptionStatusMeta[subscription.status]?.tone ?? 'neutral'}
+                          dot={subscription.status !== 'EXPIRED'}
+                        >
+                          {subscriptionStatusMeta[subscription.status]?.label ?? subscription.status}
+                        </Badge>
+                      </div>
+                      <p className="font-label text-label-sm text-on-surface-variant mt-1">
+                        {subscription.status === 'TRIALING' &&
+                          `${subscription.daysRemaining ?? 0} day${subscription.daysRemaining === 1 ? '' : 's'} left in your free month${
+                            subscription.trialEndsAt ? ` (until ${formatDate(subscription.trialEndsAt)})` : ''
+                          }.`}
+                        {subscription.status === 'ACTIVE' &&
+                          `Your plan is active${subscription.periodEndsAt ? ` until ${formatDate(subscription.periodEndsAt)}` : ''}.`}
+                        {subscription.status === 'EXPIRED' &&
+                          'Your subscription has expired — choose a plan below to restore full access.'}
+                      </p>
+                    </div>
+                    {subscription.status === 'EXPIRED' && (
+                      <span className="inline-flex items-center gap-2 font-label text-label-md font-bold text-error">
+                        <Icon name="lock" className="text-[18px]" />
+                        Core features locked
+                      </span>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-lg items-stretch">
+            {plans.map((plan) => {
+              const isCurrent = subscription?.plan === plan.plan
+              const trialUnavailable = plan.plan === 'FREE_TRIAL' && !!subscription?.trialUsed
+              return (
+                <Card key={plan.plan} className={`p-xl flex flex-col ${isCurrent ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="flex items-center justify-between gap-md mb-1">
+                    <h3 className="font-headline text-headline-sm text-on-surface">{plan.name}</h3>
+                    {isCurrent && <Badge tone="success">Current</Badge>}
+                  </div>
+                  <p className="font-label text-label-sm text-on-surface-variant min-h-[32px]">{plan.tagline}</p>
+
+                  <div className="my-lg">
+                    {plan.monthlyPrice === 0 ? (
+                      <>
+                        <span className="font-headline text-headline-lg font-bold text-on-surface">Free</span>
+                        <span className="font-label text-label-sm text-on-surface-variant"> for 1 month</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-headline text-headline-lg font-bold text-on-surface tabular-nums">
+                          {plan.monthlyPrice.toLocaleString()}
+                        </span>
+                        <span className="font-label text-label-sm text-on-surface-variant"> FCFA / month</span>
+                      </>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => void choosePlan(plan)}
+                    disabled={isCurrent || trialUnavailable || billingBusy !== null}
+                    className={`mt-auto flex items-center justify-center gap-2 h-11 px-lg rounded-xl font-label text-label-md font-bold transition-all disabled:opacity-60 ${
+                      isCurrent
+                        ? 'bg-primary/10 text-primary cursor-default'
+                        : 'bg-primary hover:bg-primary-container text-on-primary shadow-lg shadow-primary/25 active:scale-[0.98]'
+                    }`}
+                  >
+                    {billingBusy === plan.plan && <Icon name="sync" className="animate-spin" />}
+                    {isCurrent
+                      ? 'Current plan'
+                      : trialUnavailable
+                        ? 'Trial already used'
+                        : plan.plan === 'FREE_TRIAL'
+                          ? 'Start 1-month free trial'
+                          : `Choose ${plan.name}`}
+                  </button>
+
+                  <ul className="mt-lg space-y-2.5">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2">
+                        <Icon name="check_circle" className="text-primary text-[16px] mt-0.5 flex-shrink-0" filled />
+                        <span className="font-body text-body-sm text-on-surface-variant">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              )
+            })}
+          </div>
+
+          <p className="font-label text-label-sm text-on-surface-variant">
+            Plans are billed monthly in FCFA. Mobile money payments are coming soon — selecting a plan activates it
+            right away.
+          </p>
         </div>
       )}
     </div>

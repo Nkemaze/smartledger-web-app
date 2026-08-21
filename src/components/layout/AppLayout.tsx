@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { SubscriptionBanner } from './SubscriptionBanner'
 
 export function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -11,6 +12,7 @@ export function AppLayout() {
       <Topbar onMenuClick={() => setMobileNavOpen(true)} />
       <main className="relative lg:pl-72 pt-16 min-h-screen">
         <div className="mx-auto max-w-[1400px] px-gutter py-xl">
+          <SubscriptionBanner />
           <Outlet />
         </div>
       </main>

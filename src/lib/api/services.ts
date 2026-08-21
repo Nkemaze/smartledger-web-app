@@ -16,6 +16,9 @@ import type {
   StaffMember,
   StaffPerformance,
   TxnType,
+  ApiSubscription,
+  PlanDefinition,
+  SubscriptionPlan,
 } from './types'
 
 const qs = (params: Record<string, string | number | boolean | undefined>) => {
@@ -119,4 +122,10 @@ export const customerService = {
 
 export const supplierService = {
   list: () => api.get<ApiSupplier[]>('/suppliers'),
+}
+
+export const subscriptionService = {
+  me: () => api.get<ApiSubscription>('/subscriptions'),
+  plans: () => api.get<PlanDefinition[]>('/subscriptions/plans'),
+  selectPlan: (plan: SubscriptionPlan) => api.post<ApiSubscription>('/subscriptions/select-plan', { plan }),
 }

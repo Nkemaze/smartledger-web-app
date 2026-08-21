@@ -166,3 +166,28 @@ export interface StaffPerformance extends StaffMember {
     targetProgress: number | null
   }
 }
+
+export type SubscriptionPlan = 'FREE_TRIAL' | 'BASIC' | 'STANDARD' | 'PREMIUM'
+export type SubscriptionStatus = 'TRIALING' | 'ACTIVE' | 'EXPIRED'
+
+export interface ApiSubscription {
+  id: string
+  businessId: string
+  plan: SubscriptionPlan
+  planName: string
+  status: SubscriptionStatus
+  trialUsed: boolean
+  trialEndsAt?: string | null
+  periodEndsAt?: string | null
+  daysRemaining: number | null
+  createdAt: string
+}
+
+export interface PlanDefinition {
+  plan: SubscriptionPlan
+  name: string
+  tagline: string
+  monthlyPrice: number
+  trialDays?: number
+  features: string[]
+}

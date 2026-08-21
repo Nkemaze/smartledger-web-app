@@ -12,6 +12,7 @@ export {
   customerService,
   supplierService,
   whatsappService,
+  subscriptionService,
   type ChatMessage,
   type DailySummarySettings,
 } from './services'
