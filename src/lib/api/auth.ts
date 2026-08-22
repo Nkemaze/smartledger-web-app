@@ -38,8 +38,8 @@ export interface SignUpInput {
   phone: string
   email?: string
   password: string
-  verificationMethod: 'whatsapp' | 'email'
-  verificationCode: string
+  verificationMethod?: 'whatsapp' | 'email'
+  verificationCode?: string
 }
 
 export const authService = {
@@ -65,7 +65,7 @@ export const authService = {
 
   /** Public: which verification methods the server currently supports. */
   async verificationChannels() {
-    return api.get<{ whatsapp: boolean; email: boolean }>('/auth/verification/channels')
+    return api.get<{ whatsapp: boolean; email: boolean; required?: boolean }>('/auth/verification/channels')
   },
 
   async requestOtp(phone: string) {

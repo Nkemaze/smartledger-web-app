@@ -43,6 +43,7 @@ export function SignUp() {
   const [codeError, setCodeError] = useState('')
   const [seconds, setSeconds] = useState(0)
   const [whatsappAvailable, setWhatsappAvailable] = useState(false)
+  const [verificationRequired, setVerificationRequired] = useState(true)
   const codeRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
@@ -50,6 +51,9 @@ export function SignUp() {
       .verificationChannels()
       .then((c) => {
         setWhatsappAvailable(c.whatsapp)
+        // The server can disable signup verification entirely (e.g. while
+        // SMTP/WhatsApp providers are being set up).
+        setVerificationRequired(c.required !== false)
         // Default to the first working channel.
         setMethod(c.whatsapp ? 'whatsapp' : 'email')
       })
@@ -109,11 +113,11 @@ export function SignUp() {
       return
     }
     const joined = code.join('')
-    if (!codeSent) {
+    if (verificationRequired && !codeSent) {
       setError('Please request a verification code first.')
       return
     }
-    if (joined.length !== 6) {
+    if (verificationRequired && joined.length !== 6) {
       setError('Enter the 6-digit verification code.')
       return
     }
@@ -126,8 +130,7 @@ export function SignUp() {
         password,
         shopType: shopType || 'grocery',
         businessName: `${ownerName.split(' ')[0]}'s Store`,
-        verificationMethod: method,
-        verificationCode: joined,
+        ...(verificationRequired ? { verificationMethod: method, verificationCode: joined } : {}),
       })
       navigate('/setup', { replace: true })
     } catch (err) {
@@ -296,6 +299,7 @@ export function SignUp() {
                   <Icon name="expand_more" className="absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" />
                 </div>
               </div>
+              {verificationRequired && (
               <div className="flex flex-col gap-2 group">
                 <label className="font-label text-label-md text-on-surface-variant group-focus-within:text-primary transition-colors">
                   Verify your account
@@ -390,6 +394,7 @@ export function SignUp() {
                   </div>
                 )}
               </div>
+              )}
               {error && (
                 <div className="flex items-start gap-2 bg-error-container/40 rounded-xl px-md py-sm">
                   <Icon name="error_outline" className="text-error text-[18px] mt-px flex-shrink-0" />
