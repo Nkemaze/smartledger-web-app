@@ -203,15 +203,6 @@ export interface WhatsappMessage {
   createdAt: string
 }
 
-export interface WhatsappConversation {
-  contactPhone: string
-  contactName: string | null
-  lastMessage: string
-  lastDirection: 'INBOUND' | 'OUTBOUND'
-  lastAt: string
-  unreadCount: number
-}
-
 // ---------------------------------------------------------------------------
 // Platform super-admin
 // ---------------------------------------------------------------------------
@@ -273,6 +264,3 @@ export interface AdminConversation {
   businessId: string | null
   businessName: string | null
 }
-
-/** `businessId` filter: a real id, 'unassigned', or undefined for all. */
-export type AdminInboxScope = string | undefined

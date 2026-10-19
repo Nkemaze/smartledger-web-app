@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { Card } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Icon } from '@/components/ui/Icon'
-import { Badge } from '@/components/ui/Badge'
 import { adminService } from '@/lib/api'
 import type { AdminConversation, WhatsappMessage } from '@/lib/api'
 
@@ -21,9 +20,6 @@ function initialsFor(name: string | null, phone: string) {
   if (name) return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
   return phone.slice(-2)
 }
-
-/** '' = all businesses, 'unassigned' = platform-only, else a business id. */
-type Scope = string
 
 function ConversationRow({
   conv,
@@ -60,13 +56,6 @@ function ConversationRow({
             </span>
           )}
         </div>
-        <span
-          className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-            conv.businessName ? 'bg-surface-container text-on-surface-variant' : 'bg-amber-100 text-amber-700'
-          }`}
-        >
-          {conv.businessName ?? 'Unassigned'}
-        </span>
       </div>
     </button>
   )
@@ -94,8 +83,6 @@ function MessageBubble({ message }: { message: WhatsappMessage }) {
 
 export function AdminInbox() {
   const [conversations, setConversations] = useState<AdminConversation[]>([])
-  const [businesses, setBusinesses] = useState<{ id: string; name: string }[]>([])
-  const [scope, setScope] = useState<Scope>('')
   const [activePhone, setActivePhone] = useState<string | null>(null)
   const [messages, setMessages] = useState<WhatsappMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -105,24 +92,22 @@ export function AdminInbox() {
   const [error, setError] = useState('')
   const threadRef = useRef<HTMLDivElement>(null)
 
-  const scopeArg = scope === '' ? undefined : scope
-
-  const loadConversations = useCallback(async () => {
+  const loadConversations = async () => {
     try {
-      setConversations(await adminService.inboxConversations(scopeArg))
+      setConversations(await adminService.inboxConversations())
       setError('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to load conversations.')
     } finally {
       setLoadingList(false)
     }
-  }, [scopeArg])
+  }
 
   const openThread = async (phone: string) => {
     setActivePhone(phone)
     setLoadingThread(true)
     try {
-      setMessages(await adminService.inboxThread(phone, scopeArg))
+      setMessages(await adminService.inboxThread(phone))
       await loadConversations()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to load messages.')
@@ -135,7 +120,7 @@ export function AdminInbox() {
     if (!activePhone || !draft.trim() || sending) return
     setSending(true)
     try {
-      const created = await adminService.inboxReply(activePhone, draft, scopeArg)
+      const created = await adminService.inboxReply(activePhone, draft)
       setMessages((prev) => [...prev, created])
       setDraft('')
       await loadConversations()
@@ -146,32 +131,25 @@ export function AdminInbox() {
     }
   }
 
+  // Poll the conversation list for new inbound messages.
   useEffect(() => {
-    adminService.inboxBusinesses().then(setBusinesses).catch(() => {})
-  }, [])
-
-  // Reload the list whenever the scope changes; reset the open thread.
-  useEffect(() => {
-    setActivePhone(null)
-    setMessages([])
-    setLoadingList(true)
     loadConversations()
     const id = setInterval(loadConversations, 10000)
     return () => clearInterval(id)
-  }, [loadConversations])
+  }, [])
 
   // Re-poll the open thread for new inbound replies.
   useEffect(() => {
     if (!activePhone) return
     const id = setInterval(async () => {
       try {
-        setMessages(await adminService.inboxThread(activePhone, scopeArg))
+        setMessages(await adminService.inboxThread(activePhone))
       } catch {
         /* ignore transient poll errors */
       }
     }, 8000)
     return () => clearInterval(id)
-  }, [activePhone, scopeArg])
+  }, [activePhone])
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' })
@@ -182,29 +160,11 @@ export function AdminInbox() {
   return (
     <AdminLayout>
       <div className="space-y-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-md">
-          <div>
-            <h1 className="font-headline text-headline-lg text-on-surface">Platform Inbox</h1>
-            <p className="font-body text-body-md text-on-surface-variant">
-              WhatsApp messages across every business, including unassigned ones.
-            </p>
-          </div>
-          <div className="flex items-center gap-sm">
-            <Icon name="filter_list" className="text-on-surface-variant" />
-            <select
-              value={scope}
-              onChange={(e) => setScope(e.target.value)}
-              className="h-10 px-md rounded-xl bg-surface-container-lowest border border-outline-variant/40 focus:border-primary outline-none font-body text-body-md text-on-surface"
-            >
-              <option value="">All businesses</option>
-              <option value="unassigned">Unassigned only</option>
-              {businesses.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <h1 className="font-headline text-headline-lg text-on-surface">Platform Inbox</h1>
+          <p className="font-body text-body-md text-on-surface-variant">
+            Messages sent to the SmartLedger WhatsApp number. Businesses handle their own WhatsApp directly.
+          </p>
         </div>
 
         {error && (
@@ -228,7 +188,7 @@ export function AdminInbox() {
               ) : (
                 conversations.map((conv) => (
                   <ConversationRow
-                    key={`${conv.businessId ?? 'unassigned'}::${conv.contactPhone}`}
+                    key={conv.contactPhone}
                     conv={conv}
                     active={conv.contactPhone === activePhone}
                     onClick={() => openThread(conv.contactPhone)}
@@ -258,17 +218,9 @@ export function AdminInbox() {
                       initials={initialsFor(activeConv?.contactName ?? null, activePhone)}
                       className="bg-primary/10 text-primary"
                     />
-                    <div className="min-w-0">
-                      <p className="font-label text-label-md font-bold text-on-surface">
-                        {activeConv?.contactName ?? `+${activePhone}`}
-                      </p>
-                      <p className="text-[12px] text-on-surface-variant">
-                        +{activePhone} · {activeConv?.businessName ?? 'Unassigned'}
-                      </p>
-                    </div>
-                    <Badge tone={activeConv?.businessName ? 'info' : 'warning'} className="ml-auto">
-                      {activeConv?.businessName ?? 'Unassigned'}
-                    </Badge>
+                    <p className="font-label text-label-md font-bold text-on-surface">
+                      {activeConv?.contactName ?? `+${activePhone}`}
+                    </p>
                   </div>
 
                   <div ref={threadRef} className="flex-1 overflow-y-auto px-lg py-5 space-y-3 bg-surface-container-low/30">

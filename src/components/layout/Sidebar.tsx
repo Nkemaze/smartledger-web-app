@@ -16,7 +16,6 @@ const navGroups: { title?: string; items: NavItem[] }[] = [
       { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
       { to: '/sales', label: 'Sales', icon: 'receipt_long' },
       { to: '/inventory', label: 'Inventory', icon: 'inventory_2' },
-      { to: '/inbox', label: 'Inbox', icon: 'forum' },
     ],
   },
   {

@@ -13,7 +13,6 @@ import type {
   AdvisorInsight,
   ApiNotification,
   WhatsappMessage,
-  WhatsappConversation,
   ApiDocument,
   StaffMember,
   StaffPerformance,
@@ -102,14 +101,6 @@ export const whatsappService = {
   testDailySummary: () => api.post<{ message: string }>('/whatsapp/daily-summary/test', {}),
 }
 
-export const inboxService = {
-  conversations: () => api.get<WhatsappConversation[]>('/inbox/conversations'),
-  unreadCount: () => api.get<{ count: number }>('/inbox/conversations/unread-count'),
-  thread: (phone: string) => api.get<WhatsappMessage[]>(`/inbox/conversations/${encodeURIComponent(phone)}`),
-  send: (phone: string, text: string) =>
-    api.post<WhatsappMessage>(`/inbox/conversations/${encodeURIComponent(phone)}/reply`, { text }),
-}
-
 export const archiveService = {
   list: () => api.get<ApiDocument[]>('/archive'),
   upload: (file: File, type: string, transactionId?: string) => {
@@ -158,20 +149,18 @@ export const adminService = {
   setUserActive: (id: string, isActive: boolean) =>
     api.patch<AdminUserRow>(`/admin/users/${id}/active`, { isActive }),
 
-  // Platform inbox. `businessId`: a real id, 'unassigned', or undefined for all.
-  inboxConversations: (businessId?: string) =>
-    api.get<AdminConversation[]>(`/admin/inbox/conversations${qs({ businessId })}`),
-  inboxUnreadCount: (businessId?: string) =>
-    api.get<{ count: number }>(`/admin/inbox/conversations/unread-count${qs({ businessId })}`),
-  inboxThread: (phone: string, businessId?: string) =>
+  // Platform inbox — messages sent to the platform's WhatsApp number.
+  inboxConversations: () =>
+    api.get<AdminConversation[]>('/admin/inbox/conversations'),
+  inboxUnreadCount: () =>
+    api.get<{ count: number }>('/admin/inbox/conversations/unread-count'),
+  inboxThread: (phone: string) =>
     api.get<WhatsappMessage[]>(
-      `/admin/inbox/conversations/${encodeURIComponent(phone)}${qs({ businessId })}`,
+      `/admin/inbox/conversations/${encodeURIComponent(phone)}`,
     ),
-  inboxReply: (phone: string, text: string, businessId?: string) =>
+  inboxReply: (phone: string, text: string) =>
     api.post<WhatsappMessage>(
-      `/admin/inbox/conversations/${encodeURIComponent(phone)}/reply${qs({ businessId })}`,
+      `/admin/inbox/conversations/${encodeURIComponent(phone)}/reply`,
       { text },
     ),
-  inboxBusinesses: () =>
-    api.get<{ id: string; name: string }[]>('/admin/inbox/businesses'),
 }
