@@ -10,6 +10,7 @@ const navItems = [
   { to: '/suppliers', label: 'Suppliers', icon: 'local_shipping' },
   { to: '/tax', label: 'Tax & Compliance', icon: 'account_balance' },
   { to: '/advisor', label: 'AI Advisor', icon: 'smart_toy', badge: 'New' },
+  { to: '/inbox', label: 'Inbox', icon: 'forum' },
   { to: '/reports', label: 'Reports', icon: 'bar_chart' },
   { to: '/staff', label: 'Staff', icon: 'badge' },
 ]

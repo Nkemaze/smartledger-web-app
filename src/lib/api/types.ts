@@ -191,3 +191,23 @@ export interface PlanDefinition {
   trialDays?: number
   features: string[]
 }
+
+export interface WhatsappMessage {
+  id: string
+  contactPhone: string
+  contactName?: string | null
+  direction: 'INBOUND' | 'OUTBOUND'
+  text: string
+  messageType: string
+  status: string
+  createdAt: string
+}
+
+export interface WhatsappConversation {
+  contactPhone: string
+  contactName: string | null
+  lastMessage: string
+  lastDirection: 'INBOUND' | 'OUTBOUND'
+  lastAt: string
+  unreadCount: number
+}

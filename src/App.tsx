@@ -16,6 +16,7 @@ const TaxSummary = lazy(() => import('@/pages/TaxSummary').then((m) => ({ defaul
 const ComplianceReports = lazy(() => import('@/pages/ComplianceReports').then((m) => ({ default: m.ComplianceReports })))
 const DigitalArchive = lazy(() => import('@/pages/DigitalArchive').then((m) => ({ default: m.DigitalArchive })))
 const VatLedger = lazy(() => import('@/pages/VatLedger').then((m) => ({ default: m.VatLedger })))
+const Inbox = lazy(() => import('@/pages/Inbox').then((m) => ({ default: m.Inbox })))
 const AiAdvisor = lazy(() => import('@/pages/AiAdvisor').then((m) => ({ default: m.AiAdvisor })))
 const StaffList = lazy(() => import('@/pages/StaffList').then((m) => ({ default: m.StaffList })))
 const StaffDetails = lazy(() => import('@/pages/StaffDetails').then((m) => ({ default: m.StaffDetails })))
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/archive" element={<SuspenseRoute><DigitalArchive /></SuspenseRoute>} />
           <Route path="/vat-ledger" element={<SuspenseRoute><VatLedger /></SuspenseRoute>} />
           <Route path="/advisor" element={<SuspenseRoute><AiAdvisor /></SuspenseRoute>} />
+          <Route path="/inbox" element={<SuspenseRoute><Inbox /></SuspenseRoute>} />
           <Route path="/staff" element={<SuspenseRoute><StaffList /></SuspenseRoute>} />
           <Route path="/staff/:id" element={<SuspenseRoute><StaffDetails /></SuspenseRoute>} />
           <Route path="/permissions" element={<SuspenseRoute><PermissionsRoles /></SuspenseRoute>} />

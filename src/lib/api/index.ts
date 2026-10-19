@@ -12,6 +12,7 @@ export {
   customerService,
   supplierService,
   whatsappService,
+  inboxService,
   subscriptionService,
   type ChatMessage,
   type DailySummarySettings,
