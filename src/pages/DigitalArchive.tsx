@@ -164,10 +164,10 @@ export function DigitalArchive() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`whitespace-nowrap px-lg py-2.5 rounded-xl font-label text-label-md transition-all ${
+              className={`whitespace-nowrap px-lg py-2.5 rounded-full font-label text-label-md transition-all ${
                 tab === t
                   ? 'bg-primary text-on-primary shadow-md shadow-primary/25'
-                  : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high shadow-sm'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
               }`}
             >
               {t}
@@ -180,7 +180,7 @@ export function DigitalArchive() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="h-10 px-lg pr-10 bg-surface-container-lowest rounded-xl appearance-none font-label text-label-md text-on-surface cursor-pointer shadow-sm"
+              className="h-10 px-lg pr-10 bg-surface-container-lowest border border-outline-variant/40 rounded-xl appearance-none font-label text-label-md text-on-surface cursor-pointer shadow-sm"
             >
               {sortOptions.map((o) => (
                 <option key={o}>{o}</option>

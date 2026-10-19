@@ -41,8 +41,8 @@ export function Login() {
     }
     setLoading(true)
     try {
-      await login(identifier, password)
-      navigate('/', { replace: true })
+      const signedIn = await login(identifier, password)
+      navigate(signedIn.platformAdmin ? '/admin' : '/', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in. Please try again.')
     } finally {

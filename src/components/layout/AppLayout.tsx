@@ -1,11 +1,19 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { SubscriptionBanner } from './SubscriptionBanner'
+import { useAuth } from '@/lib/auth/AuthContext'
 
 export function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const { user } = useAuth()
+
+  // Platform super-admins belong in the platform console, not a store shell.
+  if (user?.platformAdmin) {
+    return <Navigate to="/admin" replace />
+  }
+
   return (
     <div className="min-h-screen bg-surface font-body text-body-md text-on-surface">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />

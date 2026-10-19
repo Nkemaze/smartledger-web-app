@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { AuthProvider, RequireAuth, GuestOnly } from '@/lib/auth/AuthContext'
+import { AuthProvider, RequireAuth, GuestOnly, RequirePlatformAdmin } from '@/lib/auth/AuthContext'
 import { Login } from '@/pages/Login'
 import { SignUp } from '@/pages/SignUp'
 import { OtpVerification } from '@/pages/OtpVerification'
@@ -22,6 +22,7 @@ const StaffList = lazy(() => import('@/pages/StaffList').then((m) => ({ default:
 const StaffDetails = lazy(() => import('@/pages/StaffDetails').then((m) => ({ default: m.StaffDetails })))
 const PermissionsRoles = lazy(() => import('@/pages/PermissionsRoles').then((m) => ({ default: m.PermissionsRoles })))
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
+const Admin = lazy(() => import('@/pages/Admin').then((m) => ({ default: m.Admin })))
 
 function Loading() {
   return (
@@ -77,6 +78,16 @@ export default function App() {
             <RequireAuth>
               <ProductOnboarding />
             </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequirePlatformAdmin>
+              <SuspenseRoute>
+                <Admin />
+              </SuspenseRoute>
+            </RequirePlatformAdmin>
           }
         />
         <Route

@@ -9,7 +9,7 @@ interface AuthContextValue {
   status: AuthStatus
   user: User | null
   business: Business | null
-  login: (identifier: string, password: string) => Promise<void>
+  login: (identifier: string, password: string) => Promise<User>
   signUp: (input: SignUpInput) => Promise<void>
   logout: () => void
   refreshBusiness: () => Promise<void>
@@ -46,12 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await authService.login(identifier, password)
     setUser(result.user)
     setStatus('authenticated')
-    try {
-      const b = await businessService.get()
-      setBusiness(b)
-    } catch {
-      setBusiness(null)
+    setBusiness(null)
+    // Platform admins have no business of their own — skip the business fetch.
+    if (!result.user.platformAdmin) {
+      try {
+        const b = await businessService.get()
+        setBusiness(b)
+      } catch {
+        setBusiness(null)
+      }
     }
+    return result.user
   }, [])
 
   const signUp = useCallback(async (input: SignUpInput) => {
@@ -101,8 +106,34 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 export function GuestOnly({ children }: { children: ReactNode }) {
-  const { status } = useAuth()
+  const { status, user } = useAuth()
   if (status === 'loading') return null
-  if (status === 'authenticated') return <Navigate to="/" replace />
+  if (status === 'authenticated') return <Navigate to={user?.platformAdmin ? '/admin' : '/'} replace />
+  return <>{children}</>
+}
+
+/**
+ * Guards the platform super-admin console. Non-admins (and store owners)
+ * are sent back to the store dashboard.
+ */
+export function RequirePlatformAdmin({ children }: { children: ReactNode }) {
+  const { status, user } = useAuth()
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (status !== 'authenticated') {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!user?.platformAdmin) {
+    return <Navigate to="/" replace />
+  }
+
   return <>{children}</>
 }

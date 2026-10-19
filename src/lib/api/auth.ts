@@ -1,16 +1,17 @@
 import { api, tokenStore, pendingPhoneStore, storeUser, storeBusiness, getStoredUser, getStoredBusiness, clearSession } from './client'
 
-export type UserRole = 'OWNER' | 'CASHIER' | 'ACCOUNTANT'
+export type UserRole = 'OWNER' | 'CASHIER' | 'ACCOUNTANT' | 'SUPERADMIN'
 
 export interface User {
   id: string
-  businessId: string
+  businessId: string | null
   name: string
   phone: string
   email?: string | null
   role: UserRole
   monthlyTarget?: number | null
   isActive: boolean
+  platformAdmin?: boolean
 }
 
 export interface Business {

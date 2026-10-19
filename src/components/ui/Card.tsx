@@ -11,7 +11,9 @@ export function Card({
 }) {
   return (
     <div
-      className={`bg-surface-container-lowest rounded-3xl shadow-sm ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.05)] transition-shadow ${
+        onClick ? 'cursor-pointer hover:shadow-[0_4px_16px_rgba(16,24,40,0.08)]' : ''
+      } ${className}`}
       onClick={onClick}
     >
       {children}

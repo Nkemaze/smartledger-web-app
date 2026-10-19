@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { Card, CardHeader } from '@/components/ui/Card'
-import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { DonutChart } from '@/components/ui/DonutChart'
@@ -28,8 +36,103 @@ function monthLabel(period: string): string {
   return d.toLocaleString('en', { month: 'short' })
 }
 
-const badgeTone = (status: string) =>
-  status === 'Success' ? 'success' : status === 'Pending' ? 'warning' : 'error'
+const badgeTone = (type: string) => (type === 'INCOME' ? 'success' : 'warning')
+
+function Sparkline({ values, color = '#006b2c' }: { values: number[]; color?: string }) {
+  const pts = values.length > 1 ? values : [0, 0]
+  const max = Math.max(...pts, 1)
+  const min = Math.min(...pts, 0)
+  const range = max - min || 1
+  const w = 100
+  const h = 34
+  const step = w / (pts.length - 1)
+  const coords = pts.map((v, i) => [i * step, h - ((v - min) / range) * (h - 4) - 2] as const)
+  const line = coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
+  const area = `${line} L${w} ${h} L0 ${h} Z`
+  const gid = `spark-${color.replace('#', '')}`
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function Kpi({
+  label,
+  value,
+  icon,
+  accent,
+  trend,
+  spark,
+  progress,
+}: {
+  label: string
+  value: string
+  icon: string
+  accent: string
+  trend?: { text: string; tone: 'up' | 'down' | 'neutral' }
+  spark?: number[]
+  progress?: { value: number; color: string }
+}) {
+  return (
+    <div className="group relative overflow-hidden bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-xl shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_8px_24px_rgba(16,24,40,0.08)] transition-all">
+      <div className="flex items-start justify-between gap-md">
+        <div className="min-w-0 flex-1">
+          <p className="font-label text-[12px] uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+          <p className="mt-2 font-headline text-[26px] leading-tight font-bold text-on-surface tabular-nums truncate">
+            {value}
+          </p>
+        </div>
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${accent}14`, color: accent }}
+        >
+          <Icon name={icon} className="text-[22px]" />
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        {trend && (
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+              trend.tone === 'up'
+                ? 'bg-primary/10 text-primary'
+                : trend.tone === 'down'
+                  ? 'bg-error-container/60 text-error'
+                  : 'bg-surface-container text-on-surface-variant'
+            }`}
+          >
+            {trend.tone !== 'neutral' && (
+              <Icon name={trend.tone === 'up' ? 'trending_up' : 'trending_down'} className="text-[13px]" />
+            )}
+            {trend.text}
+          </span>
+        )}
+        {spark && (
+          <div className="ml-auto w-20 h-8 opacity-80 group-hover:opacity-100 transition-opacity">
+            <Sparkline values={spark} color={accent} />
+          </div>
+        )}
+      </div>
+
+      {progress && (
+        <div className="mt-4 h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-1000"
+            style={{ width: `${Math.min(100, Math.max(0, progress.value))}%`, backgroundColor: progress.color }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -62,14 +165,12 @@ export function Dashboard() {
     void load()
   }, [])
 
-  const chart = useMemo(() => {
-    if (!data) return { bars: [], max: 1 }
-    const revenues = data.salesTrend.map((s) => n(s.revenue))
-    return {
-      bars: data.salesTrend.map((s) => ({ label: monthLabel(s.period), value: n(s.revenue) })),
-      max: Math.max(...revenues, 1),
-    }
+  const chartData = useMemo(() => {
+    if (!data) return []
+    return data.salesTrend.map((s) => ({ label: monthLabel(s.period), revenue: n(s.revenue) }))
   }, [data])
+
+  const sparkValues = useMemo(() => chartData.map((d) => d.revenue), [chartData])
 
   const expenseDonut = useMemo(() => {
     if (!data) return { data: [], total: 0 }
@@ -86,22 +187,23 @@ export function Dashboard() {
 
   const greeting = `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}`
   const firstName = (user?.name || 'Alex').split(' ')[0]
-  const today = new Date().toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })
+  const today = new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })
 
-  const trendText = (() => {
-    if (!data) return ''
-    const trend = data.salesTrend
-    if (trend.length < 2) return ''
-    const prev = n(trend[trend.length - 2]?.revenue)
-    const curr = n(trend[trend.length - 1]?.revenue)
-    if (prev <= 0) return 'this month vs last month'
+  const trend = (() => {
+    if (!data || data.salesTrend.length < 2) return null
+    const arr = data.salesTrend
+    const prev = n(arr[arr.length - 2]?.revenue)
+    const curr = n(arr[arr.length - 1]?.revenue)
+    if (prev <= 0) return null
     const pct = Math.round(((curr - prev) / prev) * 100)
-    return `${Math.abs(pct)}% ${pct >= 0 ? 'up' : 'down'} vs last month`
+    return { pct, up: pct >= 0 }
   })()
 
-  const lowStock = data?.lowStockProducts[0] ?? null
-
+  const lowStockCount = data?.inventory.lowStockCount ?? 0
   const txCount = n(data?.totals.transactionCount)
+  const margin = n(data?.currentMonth.revenue) > 0
+    ? Math.round((n(data?.currentMonth.profit) / n(data?.currentMonth.revenue)) * 100)
+    : 0
 
   if (loading) {
     return (
@@ -122,36 +224,56 @@ export function Dashboard() {
 
   return (
     <div className="space-y-xl">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-lg">
         <div>
-          <p className="font-label text-label-sm text-on-surface-variant mb-1">{today}</p>
-          <h1 className="font-headline text-headline-lg text-on-surface">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label text-[11px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Live overview
+            </span>
+            <span className="font-label text-[12px] text-on-surface-variant">{today}</span>
+          </div>
+          <h1 className="font-headline text-headline-lg text-on-surface tracking-tight">
             {greeting}, <span className="text-primary">{firstName}</span>
           </h1>
           <p className="font-body text-body-md text-on-surface-variant mt-1">
-            {trendText ? (
+            {trend ? (
               <>
-                Your sales are <span className="font-bold text-primary">{trendText}</span>. You've recorded{' '}
-                <span className="font-bold">{data?.totals.transactionCount ?? 0}</span> transactions so far.
+                Revenue is{' '}
+                <span className={`font-bold ${trend.up ? 'text-primary' : 'text-error'}`}>
+                  {trend.up ? 'up' : 'down'} {Math.abs(trend.pct)}%
+                </span>{' '}
+                vs last month across {txCount} transactions.
               </>
             ) : (
-              'Welcome back to your dashboard.'
+              "Here's what's happening with your business today."
             )}
           </p>
         </div>
-        <Link
-          to="/sales"
-          className="hidden lg:flex items-center gap-2 h-12 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 active:scale-[0.98] transition-all"
-        >
-          <Icon name="add_circle" />
-          Record New Sale
-        </Link>
+        <div className="flex items-center gap-sm">
+          <Link
+            to="/inventory"
+            className="hidden sm:flex items-center gap-2 h-11 px-lg bg-surface-container-lowest border border-outline-variant/40 text-on-surface rounded-xl font-label text-label-md font-semibold hover:bg-surface-container-low transition-colors"
+          >
+            <Icon name="inventory_2" className="text-[20px]" />
+            Inventory
+          </Link>
+          <Link
+            to="/sales"
+            className="flex items-center gap-2 h-11 px-lg bg-primary hover:bg-primary-container text-on-primary rounded-xl font-label text-label-md font-bold shadow-lg shadow-primary/20 hover:shadow-primary/35 active:scale-[0.98] transition-all"
+          >
+            <Icon name="add" className="text-[20px]" />
+            Record Sale
+          </Link>
+        </div>
       </div>
 
+      {/* Onboarding */}
       {isNewUser && (
-        <div className="bg-gradient-to-br from-primary/90 to-primary-container rounded-3xl shadow-xl shadow-primary/10 text-on-primary overflow-hidden relative">
-          <div className="absolute top-[-40%] right-[-5%] w-[380px] h-[380px] rounded-full bg-on-primary/10 blur-[80px]" />
-          <div className="absolute bottom-[-40%] left-[-5%] w-[300px] h-[300px] rounded-full bg-secondary/20 blur-[80px]" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-container text-on-primary shadow-xl shadow-primary/15">
+          <div className="absolute -top-24 -right-16 w-[340px] h-[340px] rounded-full bg-on-primary/10 blur-[70px]" />
+          <div className="absolute -bottom-28 left-1/4 w-[280px] h-[280px] rounded-full bg-secondary/25 blur-[80px]" />
           <div className="relative z-10 p-xl lg:p-2xl grid lg:grid-cols-[1fr_auto] gap-xl items-center">
             <div className="space-y-lg">
               <div className="flex items-center gap-md">
@@ -160,46 +282,27 @@ export function Dashboard() {
                 </div>
                 <div>
                   <h2 className="font-headline text-headline-md">
-                    {productCount === 0 ? 'Welcome! Let&apos;s set up your store' : 'Almost there!'}
+                    {productCount === 0 ? "Welcome! Let's set up your store" : 'Almost there!'}
                   </h2>
-                  <p className="font-label text-label-md text-on-primary/90">
+                  <p className="font-label text-label-md text-on-primary/85">
                     {productCount === 0
-                      ? 'You have no products yet, so you can\u2019t record a sale or transaction right now.'
-                      : `You've added ${productCount} ${productCount === 1 ? 'product' : 'products'} — time to make your first sale.`}
+                      ? 'Add a product to start recording sales and tracking profit.'
+                      : `You've added ${productCount} ${productCount === 1 ? 'product' : 'products'} — make your first sale.`}
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-md">
-                {productCount === 0 ? (
-                  <>
-                    <Link
-                      to="/setup-products"
-                      className="flex items-center gap-2 h-12 px-lg bg-on-primary text-primary rounded-xl font-label text-label-md font-bold shadow-lg active:scale-[0.98] transition-all"
-                    >
-                      <Icon name="add_circle" />
-                      Add your first product
-                    </Link>
-                    <Link
-                      to="/inventory"
-                      className="flex items-center gap-2 h-12 px-lg bg-on-primary/15 hover:bg-on-primary/25 text-on-primary rounded-xl font-label text-label-md font-bold transition-all"
-                    >
-                      <Icon name="inventory_2" />
-                      Go to Inventory
-                    </Link>
-                  </>
-                ) : (
-                  <Link
-                    to="/sales"
-                    className="flex items-center gap-2 h-12 px-lg bg-on-primary text-primary rounded-xl font-label text-label-md font-bold shadow-lg active:scale-[0.98] transition-all"
-                  >
-                    <Icon name="point_of_sale" />
-                    Record your first sale
-                  </Link>
-                )}
-              </div>
+              <Link
+                to={productCount === 0 ? '/setup-products' : '/sales'}
+                className="inline-flex items-center gap-2 h-11 px-lg bg-on-primary text-primary rounded-xl font-label text-label-md font-bold shadow-lg active:scale-[0.98] transition-all w-fit"
+              >
+                <Icon name={productCount === 0 ? 'add_circle' : 'point_of_sale'} />
+                {productCount === 0 ? 'Add your first product' : 'Record your first sale'}
+              </Link>
             </div>
-            <div className="w-full lg:w-[360px] bg-on-primary/10 rounded-2xl p-lg backdrop-blur-sm">
-              <p className="font-label text-label-sm uppercase tracking-widest text-on-primary/80 mb-md">Getting started</p>
+            <div className="w-full lg:w-[340px] bg-on-primary/10 rounded-2xl p-lg backdrop-blur-sm">
+              <p className="font-label text-[11px] uppercase tracking-widest text-on-primary/70 mb-md">
+                Getting started
+              </p>
               <div className="space-y-md">
                 {setupSteps.map((s, i) => {
                   const current = !s.done && (i === 0 || setupSteps[i - 1].done)
@@ -221,7 +324,9 @@ export function Dashboard() {
                           {s.label}
                         </Link>
                       ) : (
-                        <span className={`font-label text-label-md ${s.done ? 'font-semibold' : 'font-bold text-on-primary'}`}>
+                        <span
+                          className={`font-label text-label-md ${s.done ? 'font-semibold' : 'font-bold text-on-primary'}`}
+                        >
                           {s.label}
                         </span>
                       )}
@@ -235,7 +340,7 @@ export function Dashboard() {
       )}
 
       {error && (
-        <div className="flex items-center justify-between gap-lg bg-error-container/40 rounded-xl px-lg py-md">
+        <div className="flex items-center justify-between gap-lg bg-error-container/40 border border-error/20 rounded-xl px-lg py-md">
           <div className="flex items-center gap-2">
             <Icon name="error_outline" className="text-error" />
             <p className="font-body text-body-sm text-error">{error}</p>
@@ -246,71 +351,117 @@ export function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-lg">
-        <StatCard
+      {/* KPI bento */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">
+        <Kpi
           label="Revenue This Month"
           value={money(n(data?.currentMonth.revenue))}
           icon="payments"
-          iconBg="bg-primary/10"
-          iconColor="text-primary"
-          trend={{ text: trendText || 'current month', color: 'text-primary' }}
+          accent="#006b2c"
+          trend={trend ? { text: `${Math.abs(trend.pct)}% vs last month`, tone: trend.up ? 'up' : 'down' } : { text: 'Current month', tone: 'neutral' }}
+          spark={sparkValues}
         />
-        <StatCard
+        <Kpi
           label="Net Profit"
           value={money(n(data?.currentMonth.profit))}
           icon="account_balance_wallet"
-          iconBg="bg-secondary/10"
-          iconColor="text-secondary"
-          trend={{ text: n(data?.currentMonth.profit) >= 0 ? 'Profitable this month' : 'Below zero', color: n(data?.currentMonth.profit) >= 0 ? 'text-primary' : 'text-error' }}
+          accent="#0051d5"
+          trend={{ text: `${margin}% margin`, tone: n(data?.currentMonth.profit) >= 0 ? 'up' : 'down' }}
+          progress={{ value: Math.max(0, Math.min(100, margin)), color: n(data?.currentMonth.profit) >= 0 ? '#0051d5' : '#ba1a1a' }}
         />
-        <StatCard
+        <Kpi
           label="Transactions"
-          value={String(data?.totals.transactionCount ?? 0)}
+          value={String(txCount)}
           icon="receipt_long"
-          iconBg="bg-tertiary/10"
-          iconColor="text-tertiary"
-          trend={{ text: 'All time', color: 'text-on-surface-variant' }}
+          accent="#825100"
+          trend={{ text: 'All time', tone: 'neutral' }}
         />
-        <StatCard
+        <Kpi
           label="Inventory Health"
-          value={(data?.inventory.lowStockCount ?? 0) > 0 ? 'Attention' : 'Stable'}
+          value={lowStockCount > 0 ? 'Attention' : 'Stable'}
           icon="inventory_2"
-          iconBg="bg-error/10"
-          iconColor="text-error"
-          trend={{ text: `${data?.inventory.lowStockCount ?? 0} items low stock`, color: (data?.inventory.lowStockCount ?? 0) > 0 ? 'text-warning' : 'text-primary' }}
+          accent={lowStockCount > 0 ? '#ba1a1a' : '#006b2c'}
+          trend={{
+            text: lowStockCount > 0 ? `${lowStockCount} low stock` : 'All stocked',
+            tone: lowStockCount > 0 ? 'down' : 'up',
+          }}
+          progress={{
+            value: productCount > 0 ? Math.max(0, 100 - (lowStockCount / Math.max(productCount, 1)) * 100) : 100,
+            color: lowStockCount > 0 ? '#ba1a1a' : '#006b2c',
+          }}
         />
       </div>
 
+      {/* Main grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-xl">
         <div className="xl:col-span-2 space-y-xl">
-          <Card>
-            <CardHeader
-              title="Sales Performance"
-              subtitle="Last 6 Months Revenue Trend"
-              right={
-                <div className="flex items-center gap-lg text-[12px]">
-                  <span className="flex items-center gap-1 font-label text-on-surface-variant">
-                    <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Revenue
-                  </span>
-                </div>
-              }
-            />
-            <div className="flex items-end gap-3 h-[220px] mt-lg px-md">
-              {chart.bars.map((d) => (
-                <div key={d.label} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="font-label text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
-                    {compactMoney(d.value)}
-                  </span>
-                  <div
-                    className="w-full max-w-[48px] rounded-lg transition-all duration-300 group-hover:opacity-100 bg-primary/20 group-hover:bg-primary/40"
-                    style={{ height: `${Math.max((d.value / chart.max) * 100, 2)}%` }}
-                  />
-                  <span className="font-label text-label-sm text-on-surface-variant">{d.label}</span>
-                </div>
-              ))}
+          {/* Sales chart */}
+          <Card className="p-xl">
+            <div className="flex items-start justify-between gap-md mb-lg">
+              <div>
+                <h3 className="font-headline text-[17px] font-bold text-on-surface">Sales Performance</h3>
+                <p className="font-body text-[13px] text-on-surface-variant mt-0.5">Revenue trend over the last 6 months</p>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Revenue
+              </div>
             </div>
+            {chartData.length > 0 ? (
+              <div className="h-[260px] -ml-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#006b2c" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="#006b2c" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#bdcaba" strokeOpacity={0.25} vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 12, fill: '#3e4a3d' }}
+                      dy={8}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 11, fill: '#6e7b6c' }}
+                      width={54}
+                      tickFormatter={(v) => compactMoney(Number(v)).replace('FCFA ', '')}
+                    />
+                    <Tooltip
+                      cursor={{ stroke: '#006b2c', strokeOpacity: 0.2, strokeWidth: 1 }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: '1px solid rgba(189,202,186,0.4)',
+                        fontSize: 12,
+                        boxShadow: '0 8px 24px rgba(16,24,40,0.1)',
+                      }}
+                      formatter={(value: number) => [money(Number(value)), 'Revenue']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#006b2c"
+                      strokeWidth={2.5}
+                      fill="url(#revFill)"
+                      dot={{ r: 3, fill: '#006b2c', strokeWidth: 2, stroke: '#fff' }}
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[260px] flex items-center justify-center text-body-sm text-on-surface-variant">
+                No sales data yet.
+              </div>
+            )}
           </Card>
 
+          {/* Recent transactions */}
           <Card>
             <CardHeader
               title="Recent Transactions"
@@ -321,15 +472,15 @@ export function Dashboard() {
                 </Link>
               }
             />
-            <div className="overflow-x-auto lg:-mx-xl lg:px-xl">
+            <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10">
-                    <th className="py-3 pr-4 font-semibold">Transaction ID</th>
-                    <th className="py-3 pr-4 font-semibold">Customer</th>
-                    <th className="py-3 pr-4 font-semibold">Amount</th>
-                    <th className="py-3 pr-4 font-semibold">Status</th>
-                    <th className="py-3 pr-4 text-right font-semibold">Action</th>
+                  <tr className="text-[11px] uppercase tracking-wider text-outline border-b border-outline-variant/20">
+                    <th className="py-3 px-lg font-semibold">Transaction</th>
+                    <th className="py-3 pr-lg font-semibold">Customer</th>
+                    <th className="py-3 pr-lg font-semibold text-right">Amount</th>
+                    <th className="py-3 pr-lg font-semibold">Status</th>
+                    <th className="py-3 pr-lg text-right font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -344,24 +495,31 @@ export function Dashboard() {
                     const status = t.type === 'INCOME' ? 'Success' : 'Pending'
                     const date = new Date(t.occurredAt).toLocaleDateString('en', { month: 'short', day: 'numeric' })
                     return (
-                      <tr key={t.id} className="border-b border-outline-variant/5 last:border-0 hover:bg-surface-container-low/50 transition-colors">
-                        <td className="py-3 pr-4 font-label text-label-md font-bold text-primary">#{t.id.slice(0, 8).toUpperCase()}</td>
-                        <td className="py-3 pr-4">
+                      <tr
+                        key={t.id}
+                        className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container-low/60 transition-colors"
+                      >
+                        <td className="py-3 px-lg font-label text-label-md font-bold text-primary">
+                          #{t.id.slice(0, 8).toUpperCase()}
+                        </td>
+                        <td className="py-3 pr-lg">
                           <div className="flex items-center gap-md">
-                            <Avatar initials={initials} size="sm" />
+                            <Avatar initials={initials} />
                             <div>
                               <p className="font-label text-label-md font-semibold text-on-surface">{customer}</p>
-                              <p className="text-[12px] text-on-surface-variant">{t.category} • {date}</p>
+                              <p className="text-[12px] text-on-surface-variant">
+                                {t.category} • {date}
+                              </p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 pr-4 font-body text-body-md font-semibold text-on-surface">
-                          FCFA {Math.round(n(t.amount)).toLocaleString()}
+                        <td className="py-3 pr-lg text-right font-body text-body-md font-semibold text-on-surface tabular-nums">
+                          {money(n(t.amount))}
                         </td>
-                        <td className="py-3 pr-4">
-                          <Badge tone={badgeTone(status)}>{status}</Badge>
+                        <td className="py-3 pr-lg">
+                          <Badge tone={badgeTone(t.type)}>{status}</Badge>
                         </td>
-                        <td className="py-3 pr-4">
+                        <td className="py-3 pr-lg">
                           <button className="ml-auto block text-on-surface-variant hover:text-primary transition-colors">
                             <Icon name="more_horiz" />
                           </button>
@@ -369,60 +527,83 @@ export function Dashboard() {
                       </tr>
                     )
                   })}
+                  {(data?.recentTransactions ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-body-sm text-on-surface-variant">
+                        No transactions yet.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </Card>
         </div>
 
+        {/* Right column */}
         <div className="space-y-xl">
           {insight && (
-            <Card>
-              <CardHeader
-                title="AI Advisor Insight"
-                subtitle="Live Analysis"
-                right={
-                  <span className="flex items-center gap-1 font-label text-label-sm text-primary">
-                    <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                    LIVE
-                  </span>
-                }
-              />
-              <div className="bg-gradient-to-br from-primary-container/30 to-secondary-container/30 rounded-xl p-lg mb-lg">
-                <p className="font-body text-body-md text-on-surface mb-2">{insight.title}</p>
-                <p className="text-[12px] text-on-surface-variant">{insight.message}</p>
-                {insight.recommendation && (
-                  <p className="text-[12px] font-bold text-on-surface mt-2">{insight.recommendation}</p>
-                )}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary/10 via-surface-container-lowest to-secondary/5 border border-secondary/15 p-xl shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+              <div className="absolute top-0 left-0 h-full w-1 bg-secondary" />
+              <div className="flex items-center justify-between mb-md">
+                <div className="flex items-center gap-sm">
+                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+                    <Icon name="psychology" className="text-[19px] text-white" />
+                  </div>
+                  <div>
+                    <p className="font-headline text-[15px] font-bold text-on-surface">Smart Advisor</p>
+                    <p className="text-[11px] text-on-surface-variant">Live analysis</p>
+                  </div>
+                </div>
+                <Badge tone="info" dot pulse>
+                  Live
+                </Badge>
               </div>
-              <Link to="/advisor" className="flex items-center gap-1 font-label text-label-md text-primary hover:underline font-bold">
+              <p className="font-body text-[15px] leading-relaxed text-on-surface">{insight.title}</p>
+              <p className="text-[13px] text-on-surface-variant mt-1.5">{insight.message}</p>
+              {insight.recommendation && (
+                <div className="mt-md rounded-xl bg-surface-container-lowest/70 border border-secondary/10 px-md py-2.5">
+                  <p className="text-[12px] font-semibold text-on-surface">{insight.recommendation}</p>
+                </div>
+              )}
+              <Link
+                to="/advisor"
+                className="mt-lg inline-flex items-center justify-center gap-1.5 w-full h-10 bg-secondary text-on-secondary rounded-xl font-label text-label-md font-bold hover:opacity-90 active:scale-[0.98] transition-all"
+              >
                 View Detailed Forecast
-                <Icon name="arrow_right_alt" />
+                <Icon name="arrow_forward" className="text-[18px]" />
               </Link>
-            </Card>
+            </div>
           )}
 
-          <Card>
-            <CardHeader title="Expense Share" subtitle={`${compactMoney(expenseDonut.total)} Total`} />
+          <Card className="p-xl">
+            <div className="flex items-start justify-between mb-md">
+              <div>
+                <h3 className="font-headline text-[17px] font-bold text-on-surface">Expense Share</h3>
+                <p className="font-body text-[13px] text-on-surface-variant mt-0.5">
+                  {compactMoney(expenseDonut.total)} total
+                </p>
+              </div>
+            </div>
             {expenseDonut.data.length > 0 ? (
               <>
-                <div className="flex justify-center py-lg">
+                <div className="flex justify-center py-md">
                   <DonutChart
                     data={expenseDonut.data}
-                    size={160}
+                    size={168}
                     strokeWidth={18}
                     centerValue={compactMoney(expenseDonut.total)}
                     centerLabel="Total"
                   />
                 </div>
-                <div className="space-y-2 mt-lg">
+                <div className="space-y-2.5 mt-md">
                   {expenseDonut.data.map((e) => (
                     <div key={e.name} className="flex items-center justify-between">
                       <span className="flex items-center gap-2 font-label text-label-md text-on-surface-variant">
                         <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: e.color }} />
                         {e.name}
                       </span>
-                      <span className="font-label text-label-md font-bold text-on-surface">{e.value}%</span>
+                      <span className="font-label text-label-md font-bold text-on-surface tabular-nums">{e.value}%</span>
                     </div>
                   ))}
                 </div>
@@ -432,24 +613,37 @@ export function Dashboard() {
             )}
           </Card>
 
-          {lowStock && (
-            <Card className="border-warning/30">
-              <CardHeader
-                title="Action Required"
-                subtitle="Critical Low Stock"
-                right={
-                  <span className="w-8 h-8 rounded-full bg-warning-container flex items-center justify-center">
-                    <Icon name="notification_important" className="text-warning" />
+          {lowStockCount > 0 && (
+            <Card className="p-xl border-warning/40 bg-warning-container/20">
+              <div className="flex items-center justify-between mb-md">
+                <div className="flex items-center gap-sm">
+                  <span className="w-9 h-9 rounded-full bg-warning-container flex items-center justify-center">
+                    <Icon name="notification_important" className="text-warning text-[19px]" />
                   </span>
-                }
-              />
-              <p className="font-body text-body-md text-on-surface mb-lg">
-                <span className="font-bold text-on-surface">{lowStock.name}</span> is down to{' '}
-                <span className="font-bold text-error">{lowStock.stockQuantity} units</span> left (threshold{' '}
-                {lowStock.reorderThreshold}).
-              </p>
-              <Link to="/inventory" className="flex items-center gap-2 h-11 px-lg bg-error text-on-primary rounded-lg font-label text-label-md font-bold hover:bg-error-container transition-colors w-fit">
-                Reorder Stock Now
+                  <div>
+                    <p className="font-headline text-[15px] font-bold text-on-surface">Action Required</p>
+                    <p className="text-[11px] text-on-surface-variant">Critical low stock</p>
+                  </div>
+                </div>
+                <span className="font-headline text-headline-md text-warning">{lowStockCount}</span>
+              </div>
+              {data?.lowStockProducts.slice(0, 3).map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between py-2.5 border-b border-outline-variant/20 last:border-0"
+                >
+                  <span className="font-label text-label-md font-semibold text-on-surface truncate">{p.name}</span>
+                  <span className="font-label text-[12px] font-bold text-error flex-shrink-0">
+                    {p.stockQuantity} left
+                  </span>
+                </div>
+              ))}
+              <Link
+                to="/inventory"
+                className="mt-md flex items-center justify-center gap-2 h-10 bg-error text-on-primary rounded-xl font-label text-label-md font-bold hover:opacity-90 transition-opacity w-full"
+              >
+                <Icon name="shopping_cart_checkout" className="text-[18px]" />
+                Reorder Stock
               </Link>
             </Card>
           )}

@@ -113,7 +113,7 @@ export function ComplianceReports() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-md">
-          <button className="flex items-center gap-2 h-11 px-lg bg-surface-container-lowest text-on-surface rounded-xl font-label text-label-md font-bold shadow-sm hover:bg-surface-container-high transition-colors">
+          <button className="flex items-center gap-2 h-11 px-lg bg-surface-container-lowest text-on-surface rounded-xl font-label text-label-md font-bold border border-outline-variant/40 shadow-sm hover:bg-surface-container-high transition-colors">
             <Icon name="history" className="text-primary" />
             Archive
           </button>

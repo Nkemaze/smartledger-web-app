@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card } from '@/components/ui/Card'
+import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
 import { Icon } from '@/components/ui/Icon'
 import { Pagination } from '@/components/ui/Pagination'
@@ -118,7 +119,7 @@ export function VatLedger() {
                 setRange(e.target.value)
                 setPage(1)
               }}
-              className="h-11 px-lg pr-10 bg-surface-container-lowest rounded-xl appearance-none font-label text-label-md text-on-surface cursor-pointer shadow-sm"
+              className="h-11 px-lg pr-10 bg-surface-container-lowest border border-outline-variant/40 rounded-xl appearance-none font-label text-label-md text-on-surface cursor-pointer shadow-sm"
             >
               {dateRanges.map((r) => (
                 <option key={r}>{r}</option>
@@ -133,7 +134,7 @@ export function VatLedger() {
                 setType(e.target.value)
                 setPage(1)
               }}
-              className="h-11 px-lg pr-10 bg-surface-container-lowest rounded-xl appearance-none font-label text-label-md text-on-surface cursor-pointer shadow-sm"
+              className="h-11 px-lg pr-10 bg-surface-container-lowest border border-outline-variant/40 rounded-xl appearance-none font-label text-label-md text-on-surface cursor-pointer shadow-sm"
             >
               {types.map((t) => (
                 <option key={t}>{t}</option>
@@ -141,7 +142,7 @@ export function VatLedger() {
             </select>
             <Icon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" />
           </div>
-          <button className="h-11 px-lg bg-surface-container-lowest rounded-xl font-label text-label-md font-bold text-on-surface shadow-sm hover:bg-surface-container-high transition-colors flex items-center gap-2">
+          <button className="h-11 px-lg bg-surface-container-lowest border border-outline-variant/40 rounded-xl font-label text-label-md font-bold text-on-surface shadow-sm hover:bg-surface-container-high transition-colors flex items-center gap-2">
             <Icon name="filter_list" />
             Filters
           </button>
@@ -160,57 +161,34 @@ export function VatLedger() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-        <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-label text-label-md text-on-surface-variant mb-1">Output VAT</p>
-              <h2 className="font-headline text-headline-lg text-on-surface">{compactMoney(n(summary?.vatCollected))}</h2>
-              <p className="font-label text-label-sm text-primary font-bold mt-1 flex items-center gap-1">
-                <Icon name="trending_up" className="text-[16px]" />
-                Collected
-              </p>
-            </div>
-            <span className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Icon name="trending_up" />
-            </span>
-          </div>
-          <p className="font-label text-label-sm text-on-surface-variant mt-2">Total tax collected on sales</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-label text-label-md text-on-surface-variant mb-1">Input VAT</p>
-              <h2 className="font-headline text-headline-lg text-on-surface">{compactMoney(n(summary?.vatPaid))}</h2>
-              <p className="font-label text-label-sm text-error font-bold mt-1 flex items-center gap-1">
-                <Icon name="trending_down" className="text-[16px]" />
-                Paid
-              </p>
-            </div>
-            <span className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
-              <Icon name="shopping_cart" />
-            </span>
-          </div>
-          <p className="font-label text-label-sm text-on-surface-variant mt-2">Total tax paid on purchases</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-label text-label-md text-on-surface-variant mb-1">Net Payable</p>
-              <h2 className="font-headline text-headline-lg text-on-surface">{compactMoney(n(summary?.vatNet))}</h2>
-              <p className="font-label text-label-sm text-primary font-bold mt-1">After offsetting</p>
-            </div>
-            <div className="relative">
-              <span className="w-12 h-12 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center">
-                <Icon name="account_balance" />
-              </span>
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center">
-                <Icon name="verified_user" className="text-[12px]" />
-              </span>
-            </div>
-          </div>
-          <p className="font-label text-label-sm text-on-surface-variant mt-2">After offsetting input credits</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+        <StatCard
+          label="Output VAT"
+          value={compactMoney(n(summary?.vatCollected))}
+          icon="trending_up"
+          iconBg="bg-primary/10"
+          iconColor="text-primary"
+          trend={{ text: 'Collected', tone: 'up' }}
+          footnote="Total tax collected on sales"
+        />
+        <StatCard
+          label="Input VAT"
+          value={compactMoney(n(summary?.vatPaid))}
+          icon="shopping_cart"
+          iconBg="bg-secondary/10"
+          iconColor="text-secondary"
+          trend={{ text: 'Paid', tone: 'down' }}
+          footnote="Total tax paid on purchases"
+        />
+        <StatCard
+          label="Net Payable"
+          value={compactMoney(n(summary?.vatNet))}
+          icon="account_balance"
+          iconBg="bg-tertiary/10"
+          iconColor="text-tertiary"
+          trend={{ text: 'After offsetting', tone: 'neutral' }}
+          footnote="After offsetting input credits"
+        />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-xl items-start">
@@ -300,7 +278,7 @@ export function VatLedger() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[540px] md:min-w-[820px] text-left">
             <thead>
-              <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
+              <tr className="text-[12px] uppercase tracking-wider text-on-surface-variant border-b border-outline-variant/20 bg-surface-container-low/50">
                 <th className="py-3 px-xl font-semibold">Reference</th>
                 <th className="py-3 px-4 font-semibold hidden md:table-cell">Date</th>
                 <th className="py-3 px-4 font-semibold">Net Amount</th>

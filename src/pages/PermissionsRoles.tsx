@@ -83,7 +83,7 @@ export function PermissionsRoles() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] md:min-w-[760px] text-left">
             <thead>
-              <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
+              <tr className="text-[12px] uppercase tracking-wider text-on-surface-variant border-b border-outline-variant/20 bg-surface-container-low/50">
                 <th className="py-3 px-xl font-semibold">System Capabilities</th>
                 <th className="py-3 px-4 font-semibold text-center">Admin</th>
                 <th className="py-3 px-4 font-semibold text-center">Manager</th>

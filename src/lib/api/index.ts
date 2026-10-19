@@ -14,6 +14,7 @@ export {
   whatsappService,
   inboxService,
   subscriptionService,
+  adminService,
   type ChatMessage,
   type DailySummarySettings,
 } from './services'

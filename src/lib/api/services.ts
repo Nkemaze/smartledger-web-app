@@ -21,6 +21,11 @@ import type {
   ApiSubscription,
   PlanDefinition,
   SubscriptionPlan,
+  AdminStats,
+  AdminBusinessRow,
+  AdminUserRow,
+  AdminPagination,
+  ApiSubscriptionRecord,
 } from './types'
 
 const qs = (params: Record<string, string | number | boolean | undefined>) => {
@@ -138,4 +143,17 @@ export const subscriptionService = {
   me: () => api.get<ApiSubscription>('/subscriptions'),
   plans: () => api.get<PlanDefinition[]>('/subscriptions/plans'),
   selectPlan: (plan: SubscriptionPlan) => api.post<ApiSubscription>('/subscriptions/select-plan', { plan }),
+}
+
+export const adminService = {
+  stats: () => api.get<AdminStats>('/admin/stats'),
+  businesses: (params: { page?: number; pageSize?: number; search?: string } = {}) =>
+    api.get<{ data: AdminBusinessRow[]; pagination: AdminPagination }>(`/admin/businesses${qs(params)}`),
+  businessDetail: (id: string) => api.get<AdminBusinessRow>(`/admin/businesses/${id}`),
+  extendSubscription: (id: string, days: number) =>
+    api.patch<ApiSubscriptionRecord>(`/admin/businesses/${id}/subscription`, { days }),
+  users: (params: { page?: number; pageSize?: number; search?: string } = {}) =>
+    api.get<{ data: AdminUserRow[]; pagination: AdminPagination }>(`/admin/users${qs(params)}`),
+  setUserActive: (id: string, isActive: boolean) =>
+    api.patch<AdminUserRow>(`/admin/users/${id}/active`, { isActive }),
 }

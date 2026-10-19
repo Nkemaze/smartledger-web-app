@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
+import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Icon } from '@/components/ui/Icon'
@@ -149,36 +150,35 @@ export function StaffList() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-        <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm flex items-center gap-lg">
-          <span className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Icon name="badge" />
-          </span>
-          <div>
-            <p className="font-headline text-headline-lg text-on-surface">{staff.length.toLocaleString()}</p>
-            <p className="font-label text-label-md text-on-surface-variant">Total Staff</p>
-          </div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm flex items-center gap-lg">
-          <span className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
-            <Icon name="bolt" />
-          </span>
-          <div>
-            <p className="font-headline text-headline-lg text-on-surface">{activeCount.toLocaleString()}</p>
-            <p className="font-label text-label-md text-on-surface-variant">Currently Active</p>
-          </div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm flex items-center gap-lg">
-          <span className="w-12 h-12 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center">
-            <Icon name="person_off" />
-          </span>
-          <div>
-            <p className="font-headline text-headline-lg text-on-surface">
-              {(staff.length - activeCount).toString().padStart(2, '0')}
-            </p>
-            <p className="font-label text-label-md text-on-surface-variant">Inactive Accounts</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+        <StatCard
+          label="Total Staff"
+          value={staff.length.toLocaleString()}
+          icon="badge"
+          iconBg="bg-primary/10"
+          iconColor="text-primary"
+          trend={{ text: 'Across all branches', tone: 'neutral' }}
+        />
+        <StatCard
+          label="Currently Active"
+          value={activeCount.toLocaleString()}
+          icon="bolt"
+          iconBg="bg-secondary/10"
+          iconColor="text-secondary"
+          progress={staff.length > 0 ? (activeCount / staff.length) * 100 : 0}
+          progressColor="bg-secondary"
+        />
+        <StatCard
+          label="Inactive Accounts"
+          value={(staff.length - activeCount).toString().padStart(2, '0')}
+          icon="person_off"
+          iconBg="bg-tertiary/10"
+          iconColor="text-tertiary"
+          trend={{
+            text: staff.length - activeCount > 0 ? 'Review access' : 'All active',
+            tone: staff.length - activeCount > 0 ? 'down' : 'up',
+          }}
+        />
       </div>
 
       <Card className="overflow-hidden">
@@ -243,7 +243,7 @@ export function StaffList() {
           ) : (
             <table className="w-full min-w-[540px] md:min-w-[760px] text-left">
               <thead>
-                <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
+                <tr className="text-[12px] uppercase tracking-wider text-on-surface-variant border-b border-outline-variant/20 bg-surface-container-low/50">
                   <th className="py-3 px-xl font-semibold">Name & Profile</th>
                   <th className="py-3 px-4 font-semibold">Role</th>
                   <th className="py-3 px-4 font-semibold">Status</th>

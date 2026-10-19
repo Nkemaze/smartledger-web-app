@@ -33,7 +33,7 @@ function SalesTable({ data, onView }: { data: ApiTransaction[]; onView: (t: ApiT
   return (
     <table className="w-full min-w-[620px] md:min-w-[820px] text-left">
       <thead>
-        <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10">
+        <tr className="text-[12px] uppercase tracking-wider text-on-surface-variant border-b border-outline-variant/20 bg-surface-container-low/50">
           <th className="py-3 pl-4 pr-4 sm:pl-xl font-semibold">Date & Time</th>
           <th className="py-3 px-4 font-semibold hidden md:table-cell">Order ID</th>
           <th className="py-3 px-4 font-semibold">Customer</th>

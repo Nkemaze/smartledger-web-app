@@ -140,7 +140,7 @@ export function Inventory() {
           <h1 className="font-headline text-headline-lg text-on-surface">Product Catalog</h1>
         </div>
         <div className="flex flex-wrap items-center gap-md">
-          <button className="flex items-center gap-2 h-11 px-lg bg-surface-container-lowest text-on-surface rounded-xl font-label text-label-md font-bold shadow-sm hover:bg-surface-container-high transition-colors">
+          <button className="flex items-center gap-2 h-11 px-lg bg-surface-container-lowest text-on-surface rounded-xl font-label text-label-md font-bold border border-outline-variant/40 shadow-sm hover:bg-surface-container-high transition-colors">
             <Icon name="download" className="text-primary" />
             Export CSV
           </button>
@@ -250,7 +250,7 @@ export function Inventory() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] md:min-w-[900px] text-left">
             <thead>
-              <tr className="text-[12px] uppercase tracking-wider text-outline border-b border-outline-variant/10 bg-surface-container-low/40">
+              <tr className="text-[12px] uppercase tracking-wider text-on-surface-variant border-b border-outline-variant/20 bg-surface-container-low/50">
                 <th className="py-3 px-xl font-semibold">Product Details</th>
                 <th className="py-3 px-4 font-semibold hidden md:table-cell">SKU</th>
                 <th className="py-3 px-4 font-semibold hidden md:table-cell">Category</th>

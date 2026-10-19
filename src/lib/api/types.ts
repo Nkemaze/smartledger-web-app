@@ -211,3 +211,54 @@ export interface WhatsappConversation {
   lastAt: string
   unreadCount: number
 }
+
+// ---------------------------------------------------------------------------
+// Platform super-admin
+// ---------------------------------------------------------------------------
+
+export interface AdminStats {
+  totalBusinesses: number
+  newBusinesses30d: number
+  totalUsers: number
+  activeSubscriptions: number
+  subscriptionsExpiringSoon: number
+  trialingBusinesses: number
+}
+
+export interface AdminPagination {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export interface AdminBusinessRow {
+  id: string
+  name: string
+  shopType: string
+  currency: string
+  createdAt: string
+  users: { id: string; name: string; phone: string; email: string | null; role: string }[]
+  subscription: ApiSubscriptionRecord | null
+}
+
+export interface AdminUserRow {
+  id: string
+  name: string
+  phone: string
+  email: string | null
+  role: string
+  isActive: boolean
+  platformAdmin: boolean
+  business: { id: string; name: string } | null
+  createdAt: string
+}
+
+export interface ApiSubscriptionRecord {
+  id: string
+  businessId: string
+  plan: string
+  trialEndsAt: string | null
+  periodEndsAt: string | null
+  createdAt: string
+}

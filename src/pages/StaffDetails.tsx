@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
+import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
-import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Icon } from '@/components/ui/Icon'
 import { staffService } from '@/lib/api'
 import type { StaffPerformance } from '@/lib/api'
@@ -123,54 +123,33 @@ export function StaffDetails() {
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-            <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm">
-              <div className="flex items-center justify-between mb-lg">
-                <div>
-                  <p className="font-label text-label-md text-on-surface-variant mb-1">Sales Generated (Month)</p>
-                  <h2 className="font-headline text-headline-lg text-on-surface">{money(s?.monthRevenue)}</h2>
-                  <p className="font-label text-label-sm text-on-surface-variant mt-1">{s?.monthTransactions ?? 0} transactions this month</p>
-                </div>
-                <span className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <Icon name="payments" />
-                </span>
-              </div>
-              {Number(s?.monthlyTarget ?? 0) > 0 && (
-                <div>
-                  <div className="flex justify-between text-[12px] text-on-surface-variant mb-1">
-                    <span>Target: {money(s?.monthlyTarget)}</span>
-                    <span className="font-bold text-primary">{s?.targetProgress ?? 0}%</span>
-                  </div>
-                  <ProgressBar value={Math.min(100, Number(s?.targetProgress ?? 0))} color="bg-primary" height="h-1.5" />
-                </div>
-              )}
-            </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm">
-              <div className="flex items-center justify-between mb-lg">
-                <div>
-                  <p className="font-label text-label-md text-on-surface-variant mb-1">Total Sales (All Time)</p>
-                  <h2 className="font-headline text-headline-lg text-on-surface">{money(s?.totalSales)}</h2>
-                  <p className="font-label text-label-sm text-on-surface-variant mt-1">{s?.totalTransactions ?? 0} total transactions</p>
-                </div>
-                <span className="w-11 h-11 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
-                  <Icon name="analytics" />
-                </span>
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-sm">
-              <div className="flex items-center justify-between mb-lg">
-                <div>
-                  <p className="font-label text-label-md text-on-surface-variant mb-1">Average Sale</p>
-                  <h2 className="font-headline text-headline-lg text-on-surface">{money(s?.averageSale)}</h2>
-                  <p className="font-label text-label-sm text-on-surface-variant mt-1">
-                    {s?.targetProgress != null ? `${s.targetProgress}% of monthly target` : 'No monthly target set'}
-                  </p>
-                </div>
-                <span className="w-11 h-11 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center">
-                  <Icon name="trending_up" />
-                </span>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+            <StatCard
+              label="Sales Generated (Month)"
+              value={money(s?.monthRevenue)}
+              icon="payments"
+              iconBg="bg-primary/10"
+              iconColor="text-primary"
+              footnote={`${s?.monthTransactions ?? 0} transactions this month`}
+              progress={Number(s?.monthlyTarget ?? 0) > 0 ? Math.min(100, Number(s?.targetProgress ?? 0)) : undefined}
+              progressColor="bg-primary"
+            />
+            <StatCard
+              label="Total Sales (All Time)"
+              value={money(s?.totalSales)}
+              icon="analytics"
+              iconBg="bg-secondary/10"
+              iconColor="text-secondary"
+              footnote={`${s?.totalTransactions ?? 0} total transactions`}
+            />
+            <StatCard
+              label="Average Sale"
+              value={money(s?.averageSale)}
+              icon="trending_up"
+              iconBg="bg-tertiary/10"
+              iconColor="text-tertiary"
+              footnote={s?.targetProgress != null ? `${s.targetProgress}% of monthly target` : 'No monthly target set'}
+            />
           </div>
 
           <Card className="overflow-hidden">
