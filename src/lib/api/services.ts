@@ -26,6 +26,7 @@ import type {
   AdminUserRow,
   AdminPagination,
   ApiSubscriptionRecord,
+  AdminConversation,
 } from './types'
 
 const qs = (params: Record<string, string | number | boolean | undefined>) => {
@@ -156,4 +157,21 @@ export const adminService = {
     api.get<{ data: AdminUserRow[]; pagination: AdminPagination }>(`/admin/users${qs(params)}`),
   setUserActive: (id: string, isActive: boolean) =>
     api.patch<AdminUserRow>(`/admin/users/${id}/active`, { isActive }),
+
+  // Platform inbox. `businessId`: a real id, 'unassigned', or undefined for all.
+  inboxConversations: (businessId?: string) =>
+    api.get<AdminConversation[]>(`/admin/inbox/conversations${qs({ businessId })}`),
+  inboxUnreadCount: (businessId?: string) =>
+    api.get<{ count: number }>(`/admin/inbox/conversations/unread-count${qs({ businessId })}`),
+  inboxThread: (phone: string, businessId?: string) =>
+    api.get<WhatsappMessage[]>(
+      `/admin/inbox/conversations/${encodeURIComponent(phone)}${qs({ businessId })}`,
+    ),
+  inboxReply: (phone: string, text: string, businessId?: string) =>
+    api.post<WhatsappMessage>(
+      `/admin/inbox/conversations/${encodeURIComponent(phone)}/reply${qs({ businessId })}`,
+      { text },
+    ),
+  inboxBusinesses: () =>
+    api.get<{ id: string; name: string }[]>('/admin/inbox/businesses'),
 }

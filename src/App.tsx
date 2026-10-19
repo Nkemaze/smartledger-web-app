@@ -23,6 +23,7 @@ const StaffDetails = lazy(() => import('@/pages/StaffDetails').then((m) => ({ de
 const PermissionsRoles = lazy(() => import('@/pages/PermissionsRoles').then((m) => ({ default: m.PermissionsRoles })))
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
 const Admin = lazy(() => import('@/pages/Admin').then((m) => ({ default: m.Admin })))
+const AdminInbox = lazy(() => import('@/pages/AdminInbox').then((m) => ({ default: m.AdminInbox })))
 
 function Loading() {
   return (
@@ -86,6 +87,16 @@ export default function App() {
             <RequirePlatformAdmin>
               <SuspenseRoute>
                 <Admin />
+              </SuspenseRoute>
+            </RequirePlatformAdmin>
+          }
+        />
+        <Route
+          path="/admin/inbox"
+          element={
+            <RequirePlatformAdmin>
+              <SuspenseRoute>
+                <AdminInbox />
               </SuspenseRoute>
             </RequirePlatformAdmin>
           }

@@ -262,3 +262,17 @@ export interface ApiSubscriptionRecord {
   periodEndsAt: string | null
   createdAt: string
 }
+
+export interface AdminConversation {
+  contactPhone: string
+  contactName: string | null
+  lastMessage: string
+  lastDirection: 'INBOUND' | 'OUTBOUND'
+  lastAt: string
+  unreadCount: number
+  businessId: string | null
+  businessName: string | null
+}
+
+/** `businessId` filter: a real id, 'unassigned', or undefined for all. */
+export type AdminInboxScope = string | undefined

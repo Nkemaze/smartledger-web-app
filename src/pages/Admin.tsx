@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import { StatCard } from '@/components/ui/StatCard'
 import { Badge } from '@/components/ui/Badge'
+import { AdminLayout } from '@/components/layout/AdminLayout'
 import { adminService } from '@/lib/api'
-import { useAuth } from '@/lib/auth/AuthContext'
 import type {
   AdminStats,
   AdminBusinessRow,
@@ -29,9 +28,6 @@ function planLabel(sub: ApiSubscriptionRecord | null) {
 type Tab = 'businesses' | 'users'
 
 export function Admin() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [tab, setTab] = useState<Tab>('businesses')
   const [search, setSearch] = useState('')
@@ -90,36 +86,8 @@ export function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-surface font-body text-on-surface">
-      {/* Admin topbar */}
-      <header className="sticky top-0 z-30 h-16 bg-surface-container-lowest border-b border-outline-variant/20 flex items-center px-lg gap-md">
-        <div className="flex items-center gap-sm">
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-primary text-on-primary flex items-center justify-center">
-            <Icon name="shield_person" className="text-[20px]" filled />
-          </span>
-          <div className="leading-tight">
-            <p className="font-headline font-bold text-[15px]">Platform Console</p>
-            <p className="text-[11px] text-on-surface-variant">SmartLedger super-admin</p>
-          </div>
-        </div>
-        <div className="ml-auto flex items-center gap-md">
-          <span className="hidden sm:block text-[13px] text-on-surface-variant">
-            {user?.name} · {user?.email}
-          </span>
-          <button
-            onClick={() => {
-              logout()
-              navigate('/login', { replace: true })
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-outline-variant/40 text-on-surface-variant hover:bg-error-container hover:text-error transition-colors font-label text-label-md"
-          >
-            <Icon name="logout" className="text-[18px]" />
-            Log out
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1400px] px-gutter py-xl space-y-xl">
+    <AdminLayout>
+      <div className="space-y-xl">
         <div>
           <h1 className="font-headline text-[28px] font-bold">Platform overview</h1>
           <p className="text-on-surface-variant mt-1">
@@ -302,7 +270,7 @@ export function Admin() {
             </table>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   )
 }
